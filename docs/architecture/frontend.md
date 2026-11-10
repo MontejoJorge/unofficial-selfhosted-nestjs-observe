@@ -124,7 +124,7 @@ flowchart TD
     pathless --> project["projects/:projectId<br/>loader: projectQueryOptions (404s early)"]
     pathless --> star["* → NotFound"]
     project --> dash["index (Dashboard)"]
-    project --> list["applications · requests · requests/details · requests/:requestId<br/>profiler · jobs · jobs/details · jobs/:jobId<br/>users · users/:userId · services · map · releases<br/>errors · errors/:errorId · logs · traces/:traceId<br/>keys · settings · settings/storage"]
+    project --> list["applications · requests · requests/details · requests/:requestId<br/>profiler · jobs · jobs/details · jobs/:jobId<br/>users · users/:userId · spans · spans/details · services · map · releases<br/>errors · errors/:errorId · logs · traces/:traceId<br/>keys · settings · settings/storage"]
 ```
 
 ### Loaders prefetch, components read

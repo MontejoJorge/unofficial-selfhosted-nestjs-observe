@@ -163,6 +163,11 @@ function ProjectNav({
       label: 'Users',
       prefixes: [paths.users(project)],
     },
+    {
+      to: paths.spans(project),
+      label: 'Spans',
+      prefixes: [paths.spans(project)],
+    },
     { label: 'Custom', soon: true },
     {
       to: paths.services(project),

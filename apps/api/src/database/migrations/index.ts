@@ -15,6 +15,7 @@ import { updateCheck } from './0013-update-check.js';
 import { selfObserve } from './0014-self-observe.js';
 import { projectPosition } from './0015-project-position.js';
 import { authSettings } from './0016-auth-settings.js';
+import { customSpans } from './0017-custom-spans.js';
 
 /**
  * All migrations, keyed by name. Names sort lexicographically, so keep the numeric
@@ -38,4 +39,5 @@ export const migrations: Record<string, Migration> = {
   '0014-self-observe': selfObserve,
   '0015-project-position': projectPosition,
   '0016-auth-settings': authSettings,
+  '0017-custom-spans': customSpans,
 };

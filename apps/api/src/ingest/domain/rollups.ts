@@ -66,9 +66,17 @@ export interface UserRollup extends LatencyRollup {
   firstCalledAt: Date;
 }
 
+/** A reference to one span, to open its execution. */
+export interface SpanRef {
+  executionId: string;
+  traceId: string;
+  calledAt: Date;
+}
+
 /**
- * Spans of one class method (or outbound call), in executions of one operation on one
- * instance, during one 5-minute bucket. Keeps a reference to the slowest span.
+ * Spans of one class method (or outbound call) and name, in executions of one operation
+ * on one instance, during one 5-minute bucket. Keeps a reference to the slowest span and
+ * to the latest failed one.
  */
 export interface SpanRollup extends LatencyRollup {
   bucket: Date;
@@ -79,15 +87,14 @@ export interface SpanRollup extends LatencyRollup {
   origin: string;
   className: string;
   methodName: string;
+  /** name of a manual span, `''` for auto spans */
+  name: string;
   errors: number;
   selfSumMs: number;
   /** the span with the longest duration (`maxMs`) */
-  slowest: {
-    executionId: string;
-    traceId: string;
-    calledAt: Date;
-    selfMs: number;
-  };
+  slowest: SpanRef & { selfMs: number };
+  /** the failed span of the latest execution, null without errors */
+  lastError: (SpanRef & { durationMs: number }) | null;
 }
 
 function newLatency(calledAt: Date): LatencyRollup {
@@ -245,6 +252,7 @@ export function rollUpSpans(spans: SpanRecord[]): SpanRollup[] {
     if (s.durationMs === null) continue;
     const selfMs = s.selfMs ?? s.durationMs;
     const bucket = floorTo(s.calledAt, SPAN_BUCKET_MS);
+    const name = s.name ?? '';
     const key = JSON.stringify([
       bucket.getTime(),
       s.serviceId,
@@ -253,6 +261,7 @@ export function rollUpSpans(spans: SpanRecord[]): SpanRollup[] {
       s.origin,
       s.className,
       s.methodName,
+      name,
     ]);
     let rollup = byKey.get(key);
     if (!rollup) {
@@ -265,6 +274,7 @@ export function rollUpSpans(spans: SpanRecord[]): SpanRollup[] {
         origin: s.origin,
         className: s.className,
         methodName: s.methodName,
+        name,
         errors: 0,
         selfSumMs: 0,
         slowest: {
@@ -273,6 +283,7 @@ export function rollUpSpans(spans: SpanRecord[]): SpanRollup[] {
           calledAt: s.calledAt,
           selfMs,
         },
+        lastError: null,
       };
       byKey.set(key, rollup);
     }
@@ -285,7 +296,16 @@ export function rollUpSpans(spans: SpanRecord[]): SpanRollup[] {
       };
     addLatency(rollup, s.durationMs, s.calledAt);
     rollup.selfSumMs += selfMs;
-    if (s.hasError) rollup.errors++;
+    if (s.hasError) {
+      rollup.errors++;
+      if (!rollup.lastError || s.calledAt >= rollup.lastError.calledAt)
+        rollup.lastError = {
+          executionId: s.executionId,
+          traceId: s.traceId,
+          calledAt: s.calledAt,
+          durationMs: s.durationMs,
+        };
+    }
   }
   return sortedValues(byKey);
 }

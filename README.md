@@ -41,6 +41,8 @@ pnpm add @nestjs/observe@0.3.20 --save-exact
 
 - **Drop-in collector** for the `@nestjs/observe` agent up to 0.3.20: you only change its `endpoint`.
 - **Requests and jobs** with latency percentiles, error rates and a trace waterfall per execution.
+- **Spans**: calls, duration and failures of the spans you create with `tracer.createSpan`, each call
+  linked to its trace.
 - **Errors** grouped, **logs** linked to their traces, and **runtime metrics** (CPU, memory, GC, event
   loop) per instance.
 - **Projects, applications and API keys**: one project per environment, one application per service.

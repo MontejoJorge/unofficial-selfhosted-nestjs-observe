@@ -27,6 +27,10 @@ export const paths = {
   /** Users seen in the range (`http.getUserId`). */
   users: (p: string) => `${project(p)}/users`,
   user: (p: string, userId: string) => `${project(p)}/users/${enc(userId)}`,
+  /** Calls, failures and latency per span; pass `{ origin }` as search for auto spans. */
+  spans: (p: string) => `${project(p)}/spans`,
+  /** One span; pass `{ origin, name }` or `{ origin, className, methodName }` as search. */
+  span: (p: string) => `${project(p)}/spans/details`,
   /** Own and total time per class; pass `{ className }` as search for one class. */
   services: (p: string) => `${project(p)}/services`,
   /** Clients, applications, queues, databases and external services, and their links. */

@@ -9,6 +9,7 @@ import { managementHandlers } from './handlers/management';
 import { mapHandlers } from './handlers/map';
 import { releaseHandlers } from './handlers/releases';
 import { selfObserveHandlers } from './handlers/self-observe';
+import { spanHandlers } from './handlers/spans';
 import { telemetryHandlers } from './handlers/telemetry';
 import { updateHandlers } from './handlers/updates';
 import { catchUp } from './store';
@@ -19,6 +20,7 @@ export async function startDemo(): Promise<void> {
   catchUp();
   const worker = setupWorker(
     ...telemetryHandlers,
+    ...spanHandlers,
     ...mapHandlers,
     ...releaseHandlers,
     ...managementHandlers,

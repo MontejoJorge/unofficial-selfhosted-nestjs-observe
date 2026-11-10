@@ -265,4 +265,42 @@ describe('rollUpSpans', () => {
     expect(rollup.selfSumMs).toBe(12);
     expect(rollup.slowest.selfMs).toBe(12);
   });
+
+  it('splits the manual spans of one method by name', () => {
+    const rollups = rollUpSpans([
+      span({ origin: 'manual', name: 'stripe.charge' }),
+      span({ origin: 'manual', name: 'stripe.refund' }),
+      span({ origin: 'manual', name: 'stripe.charge' }),
+      span({}),
+    ]);
+    // in key order: origin, then name
+    expect(rollups.map((r) => [r.origin, r.name, r.count])).toEqual([
+      ['auto', '', 1],
+      ['manual', 'stripe.charge', 2],
+      ['manual', 'stripe.refund', 1],
+    ]);
+  });
+
+  it('keeps the failed span of the latest execution', () => {
+    const [clean] = rollUpSpans([span({})]);
+    expect(clean.lastError).toBeNull();
+
+    const [rollup] = rollUpSpans([
+      span({
+        executionId: 'e2',
+        traceId: 't2',
+        calledAt: at('12:03:00'),
+        durationMs: 7,
+        hasError: true,
+      }),
+      span({ executionId: 'e1', calledAt: at('12:01:00'), hasError: true }),
+      span({ executionId: 'e3', calledAt: at('12:04:00') }),
+    ]);
+    expect(rollup.lastError).toEqual({
+      executionId: 'e2',
+      traceId: 't2',
+      calledAt: at('12:03:00'),
+      durationMs: 7,
+    });
+  });
 });

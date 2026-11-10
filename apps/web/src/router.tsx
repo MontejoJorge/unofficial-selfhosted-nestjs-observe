@@ -46,6 +46,16 @@ import { operationSearch } from '@/features/requests/search';
 import { selfObserveQueryOptions } from '@/features/self-observe/queries';
 import { servicesQueryOptions } from '@/features/services/queries';
 import {
+  previousSpanQueryOptions,
+  previousSpansQueryOptions,
+  spanInvocationsQueryOptions,
+  spanQueryOptions,
+  spanSamplesQueryOptions,
+  spansQueryOptions,
+} from '@/features/spans/queries';
+import { spanSearch, spansSearch } from '@/features/spans/search';
+import { spanKeyOf } from '@/features/spans/span-key';
+import {
   projectStorageQueryOptions,
   storageOverviewQueryOptions,
   storageTrimsQueryOptions,
@@ -479,6 +489,57 @@ export const router = createBrowserRouter(
                   lazy: async () => ({
                     Component: (await import('@/features/users/user-page'))
                       .UserPage,
+                  }),
+                },
+                {
+                  path: 'spans',
+                  loader: async (args) => {
+                    const scope = scopeOf(args);
+                    const origin =
+                      parseRequestSearch(spansSearch, args.request).origin ??
+                      'manual';
+                    await queryClient.ensureQueryData(
+                      spansQueryOptions(scope, origin),
+                    );
+                    void queryClient.prefetchQuery(
+                      previousSpansQueryOptions(scope, origin),
+                    );
+                  },
+                  lazy: async () => ({
+                    Component: (await import('@/features/spans/spans-page'))
+                      .SpansPage,
+                  }),
+                },
+                {
+                  path: 'spans/details',
+                  loader: async (args) => {
+                    const scope = scopeOf(args);
+                    const search = parseRequestSearch(spanSearch, args.request);
+                    const span = spanKeyOf(search);
+                    if (!span) throw new Response('Not found', { status: 404 });
+                    await Promise.all([
+                      queryClient.ensureQueryData(
+                        spanQueryOptions(scope, span),
+                      ),
+                      span.origin === 'manual'
+                        ? queryClient.ensureInfiniteQueryData(
+                            spanInvocationsQueryOptions(
+                              scope,
+                              span.name,
+                              search.status,
+                            ),
+                          )
+                        : queryClient.ensureQueryData(
+                            spanSamplesQueryOptions(scope, span),
+                          ),
+                    ]);
+                    void queryClient.prefetchQuery(
+                      previousSpanQueryOptions(scope, span),
+                    );
+                  },
+                  lazy: async () => ({
+                    Component: (await import('@/features/spans/span-page'))
+                      .SpanPage,
                   }),
                 },
                 {

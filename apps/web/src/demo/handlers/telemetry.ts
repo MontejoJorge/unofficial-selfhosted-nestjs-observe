@@ -320,7 +320,7 @@ function runtimeSamples(
 const round = (value: number) => Math.round(value * 100) / 100;
 
 /** Executions (requests and jobs) the services view covers, with their span templates. */
-function serviceExecutions(params: Params, window: Window) {
+export function serviceExecutions(params: Params, window: Window) {
   const source = params.get('source');
   const operationId = params.get('operationId');
   const queue = params.get('queue');

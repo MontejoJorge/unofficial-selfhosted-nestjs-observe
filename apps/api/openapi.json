@@ -2682,6 +2682,478 @@
         ]
       }
     },
+    "/api/spans": {
+      "get": {
+        "description": "Read from 5-minute rollups: the window starts at the 5-minute bucket containing `from`.",
+        "operationId": "listSpans",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "description": "`manual`: spans your code creates, by name (default). `auto`: by class method.",
+            "schema": {
+              "default": "manual",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SpanOrigin"
+                }
+              ]
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpansDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Calls, failures and latency per span, with a calls timeline",
+        "tags": [
+          "spans"
+        ]
+      }
+    },
+    "/api/spans/details": {
+      "get": {
+        "description": "Read from 5-minute rollups: the window starts at the 5-minute bucket containing `from`.",
+        "operationId": "getSpan",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "description": "`manual`: spans your code creates, by name (default). `auto`: by class method.",
+            "schema": {
+              "default": "manual",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SpanOrigin"
+                }
+              ]
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Manual span name.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "className",
+            "required": false,
+            "in": "query",
+            "description": "Auto span class, with `methodName`.",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "methodName",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpanDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Calls, failures and latency of one span over time",
+        "tags": [
+          "spans"
+        ]
+      }
+    },
+    "/api/spans/invocations": {
+      "get": {
+        "operationId": "listSpanInvocations",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size (default 50, max 500).",
+            "schema": {
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "`error` = invocations that recorded an error.",
+            "schema": {
+              "$ref": "#/components/schemas/SpanStatus"
+            }
+          },
+          {
+            "name": "name",
+            "required": true,
+            "in": "query",
+            "description": "Manual span name.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Opaque cursor: pass `nextCursor` from the previous page.",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpanInvocationPageDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Calls of one manual span, newest first",
+        "tags": [
+          "spans"
+        ]
+      }
+    },
+    "/api/spans/samples": {
+      "get": {
+        "description": "The calls the 5-minute rollup keeps: per bucket, instance and operation, the slowest one and the latest failed one. Read from 5-minute rollups: the window starts at the 5-minute bucket containing `from`.",
+        "operationId": "listSpanSamples",
+        "parameters": [
+          {
+            "name": "application",
+            "required": false,
+            "in": "query",
+            "description": "Application id (must belong to the project). Omit for the whole project.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "range",
+            "required": false,
+            "in": "query",
+            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
+            "schema": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
+            "required": false,
+            "in": "query",
+            "description": "`manual`: spans your code creates, by name (default). `auto`: by class method.",
+            "schema": {
+              "default": "manual",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SpanOrigin"
+                }
+              ]
+            }
+          },
+          {
+            "name": "instance",
+            "required": false,
+            "in": "query",
+            "description": "Filter by instance: the `serviceId` an agent reports.",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "project",
+            "required": true,
+            "in": "query",
+            "description": "Project id or slug.",
+            "schema": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Manual span name.",
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          },
+          {
+            "name": "className",
+            "required": false,
+            "in": "query",
+            "description": "Auto span class, with `methodName`.",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          },
+          {
+            "name": "methodName",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 1000,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpanSamplesDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Slowest and latest failed calls of one span",
+        "tags": [
+          "spans"
+        ]
+      }
+    },
     "/api/releases": {
       "get": {
         "operationId": "listReleases",
@@ -5807,6 +6279,282 @@
           "calledAt"
         ]
       },
+      "SpanStatsDto": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SpanOrigin"
+              }
+            ]
+          },
+          "className": {
+            "type": "string",
+            "nullable": true,
+            "description": "Auto spans only."
+          },
+          "methodName": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "The manual span's name, or `Class.method` for an auto span."
+          },
+          "calls": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number",
+            "description": "Calls that recorded an error."
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          },
+          "lastSeenAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "origin",
+          "className",
+          "methodName",
+          "name",
+          "calls",
+          "errorCount",
+          "errorRate",
+          "latency",
+          "lastSeenAt"
+        ]
+      },
+      "SpansDto": {
+        "type": "object",
+        "properties": {
+          "timeline": {
+            "description": "Calls per bucket (errors = failed calls), gap-filled; buckets are 5 minutes or wider.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBucketDto"
+            }
+          },
+          "spans": {
+            "description": "By calls desc, at most 1000.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpanStatsDto"
+            }
+          },
+          "calls": {
+            "type": "number",
+            "description": "Calls of every span of the origin."
+          },
+          "errorCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "timeline",
+          "spans",
+          "calls",
+          "errorCount"
+        ]
+      },
+      "SpanDetailDto": {
+        "type": "object",
+        "properties": {
+          "lastSeenAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeline": {
+            "description": "Calls, failures and latency per bucket, gap-filled; buckets are 5 minutes or wider.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeBucketDto"
+            }
+          },
+          "calls": {
+            "type": "number"
+          },
+          "errorCount": {
+            "type": "number"
+          },
+          "errorRate": {
+            "type": "number",
+            "description": "Ratio 0..1."
+          },
+          "latency": {
+            "$ref": "#/components/schemas/PercentilesDto"
+          }
+        },
+        "required": [
+          "lastSeenAt",
+          "timeline",
+          "calls",
+          "errorCount",
+          "errorRate",
+          "latency"
+        ]
+      },
+      "SpanStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "error"
+        ]
+      },
+      "SpanInvocationDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionSource"
+              }
+            ]
+          },
+          "spanId": {
+            "type": "string",
+            "nullable": true
+          },
+          "startOffsetMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Milliseconds from the start of the request or job."
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "description": "UUIDv7 of the span's start."
+          },
+          "executionId": {
+            "type": "string",
+            "description": "Request or job id, links to its detail route."
+          },
+          "operation": {
+            "type": "string",
+            "description": "operationId for requests, `queue/name` for jobs."
+          },
+          "serviceId": {
+            "type": "string",
+            "description": "Instance (the agent's serviceId)."
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "hasError": {
+            "type": "boolean"
+          },
+          "calledAt": {
+            "type": "string",
+            "description": "The span's start (ISO)."
+          }
+        },
+        "required": [
+          "source",
+          "spanId",
+          "startOffsetMs",
+          "durationMs",
+          "id",
+          "executionId",
+          "operation",
+          "serviceId",
+          "traceId",
+          "hasError",
+          "calledAt"
+        ]
+      },
+      "SpanInvocationPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpanInvocationDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "SpanSampleDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionSource"
+              }
+            ]
+          },
+          "executionId": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string",
+            "description": "operationId for requests, `queue/name` for jobs."
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "durationMs": {
+            "type": "number"
+          },
+          "calledAt": {
+            "type": "string",
+            "description": "Start of the request or job (ISO)."
+          }
+        },
+        "required": [
+          "source",
+          "executionId",
+          "traceId",
+          "operation",
+          "serviceId",
+          "durationMs",
+          "calledAt"
+        ]
+      },
+      "SpanSamplesDto": {
+        "type": "object",
+        "properties": {
+          "slowest": {
+            "description": "The slowest call of each 5-minute bucket, instance and operation, slowest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpanSampleDto"
+            }
+          },
+          "failed": {
+            "description": "The latest failed call of each 5-minute bucket, instance and operation, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpanSampleDto"
+            }
+          }
+        },
+        "required": [
+          "slowest",
+          "failed"
+        ]
+      },
       "ReleaseWindow": {
         "type": "string",
         "enum": [
@@ -6634,6 +7382,7 @@
           "logs",
           "runtime_metrics",
           "custom_metrics",
+          "custom_spans",
           "profiles"
         ]
       },

@@ -13,6 +13,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   changes. Sessions are signed `HttpOnly` cookies that last 30 days by default. Collector settings has a
   Sign-in panel to change the length (1 to 365 days) and to sign out every browser. Ingest keeps using API
   keys. See [ADR 0010](docs/adr/0010-password-sign-in.md).
+- **Spans page.** Calls, duration and failure rate of the spans your code creates with
+  `tracer.createSpan`, by name, or of the automatic ones by class method. A manual span's page lists
+  every call with its trace; an automatic span's page shows its slowest and latest failed calls. Manual
+  spans are stored one row per call in the new `custom_spans` table, kept for `RETENTION_DAYS`. Data starts
+  with this version. See [ADR 0011](docs/adr/0011-custom-spans.md).
 
 ### Changed
 

@@ -42,6 +42,11 @@ function ofSlowest<T>(column: string) {
   return sql<T>`case when excluded.max_ms > span_stats_5m.max_ms then ${sql.ref(`excluded.${column}`)} else ${sql.ref(`span_stats_5m.${column}`)} end`;
 }
 
+/** `excluded.<column>` when the incoming row holds the later failed span, else the stored one. */
+function ofLatestError<T>(column: string) {
+  return sql<T>`case when span_stats_5m.error_called_at is null or excluded.error_called_at > span_stats_5m.error_called_at then ${sql.ref(`excluded.${column}`)} else ${sql.ref(`span_stats_5m.${column}`)} end`;
+}
+
 /** Merges min, max, histogram and last call time of a latency rollup row. */
 function latencyMerge(table: LatencyRollupTable) {
   return {
@@ -92,6 +97,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
     for (const j of batch.jobs) days.add(utcDay(j.calledAt));
     for (const l of batch.logs) days.add(utcDay(l.timestamp));
     for (const m of batch.customMetrics) days.add(utcDay(m.recordedAt));
+    for (const s of batch.customSpans) days.add(utcDay(s.calledAt));
     return days;
   }
 
@@ -151,6 +157,31 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
         error: toJson(j.error),
         tags: toJson(j.tags),
         trace: toJson(j.trace) ?? '[]',
+      })),
+    );
+
+    await this.insertCounted(
+      trx,
+      usage,
+      'custom_spans',
+      batch.customSpans.map((s) => ({
+        id: s.id,
+        called_at: s.calledAt,
+        application_id,
+        service_id: s.serviceId,
+        name: s.name,
+        source: s.source,
+        operation: s.operation,
+        execution_id: s.executionId,
+        trace_id: s.traceId,
+        span_id: s.spanId,
+        class_name: s.className,
+        method_name: s.methodName,
+        duration_ms: s.durationMs,
+        start_offset_ms: s.startOffsetMs,
+        has_error: s.hasError,
+        error: toJson(s.error),
+        tags: toJson(s.tags),
       })),
     );
   }
@@ -386,6 +417,7 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       origin: s.origin,
       class_name: s.className,
       method_name: s.methodName,
+      name: s.name,
       calls: s.count,
       errors: s.errors,
       total_ms: s.sumMs,
@@ -398,8 +430,12 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
       max_called_at: s.slowest.calledAt,
       max_self_ms: s.slowest.selfMs,
       last_called_at: s.lastCalledAt,
+      error_execution_id: s.lastError?.executionId ?? null,
+      error_trace_id: s.lastError?.traceId ?? null,
+      error_called_at: s.lastError?.calledAt ?? null,
+      error_ms: s.lastError?.durationMs ?? null,
     }));
-    for (const chunk of chunkRows(spanRows, 20)) {
+    for (const chunk of chunkRows(spanRows, 25)) {
       await trx
         .insertInto('span_stats_5m')
         .values(chunk)
@@ -414,14 +450,22 @@ export class PostgresTelemetryWriter extends TelemetryWriter {
               'origin',
               'class_name',
               'method_name',
+              'name',
             ])
             .doUpdateSet({
               // every expression reads the stored row as it was, so the slowest-span
-              // columns compare against the old max_ms
+              // columns compare against the old max_ms and the latest-error ones
+              // against the old error_called_at
               max_execution_id: ofSlowest<string>('max_execution_id'),
               max_trace_id: ofSlowest<string>('max_trace_id'),
               max_called_at: ofSlowest<Date>('max_called_at'),
               max_self_ms: ofSlowest<number>('max_self_ms'),
+              error_execution_id: ofLatestError<string | null>(
+                'error_execution_id',
+              ),
+              error_trace_id: ofLatestError<string | null>('error_trace_id'),
+              error_called_at: ofLatestError<Date | null>('error_called_at'),
+              error_ms: ofLatestError<number | null>('error_ms'),
               ...latencyMerge('span_stats_5m'),
               calls: added('span_stats_5m', 'calls'),
               errors: added('span_stats_5m', 'errors'),

@@ -96,7 +96,7 @@ The read side deliberately has no use-case layer: controllers call the read port
 ## Data model
 
 Day-partitioned (range on the time column, UTC days, partitions named `<table>_pYYYYMMDD`):
-`requests`, `jobs`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, and the
+`requests`, `jobs`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, `custom_spans`, and the
 rollups `requests_1m`, `jobs_1m`, `users_1h`, `user_presence_15m` and `span_stats_5m`.
 Plain tables: `services`, `service_versions`, `error_groups`, `error_group_culprits`, `profiles`, `application_usage`, and
 the management tables `projects`, `applications`, `api_keys`, `application_purges`, `storage_trims`,
@@ -120,7 +120,9 @@ self-observe switch and its application).
   partition key (`windowFromId`) and touches one partition.
 - Each execution keeps its original span tree as `jsonb` (`trace`), so detail views need one read. Spans
   are not stored one by one: ingest flattens the tree in memory (`flattenTrace`) only to roll it up into
-  `span_stats_5m` (the `spans` table was dropped by migration 0009, see ADR 0004).
+  `span_stats_5m` (the `spans` table was dropped by migration 0009, see ADR 0004). The exception is
+  `custom_spans`: one row per manual span with a name (`tracer.createSpan`), at the span's start, for the
+  Spans page ([ADR 0011](../../docs/adr/0011-custom-spans.md)).
 - **Per-minute rollups** ([ADR 0003](../../docs/adr/0003-minute-rollups.md)): `requests_1m` and `jobs_1m`
   hold counts, duration sum/min/max and a log-scale latency histogram (`int4[]`,
   `ingest/domain/latency-histogram.ts`) per application, minute, instance and operation or job. Ingest
@@ -130,10 +132,12 @@ self-observe switch and its application).
   `users_1h` per application, UTC hour and user id (no instance; `''` for requests without a user id,
   returned as `userId: null`; ids are truncated to 255 characters at ingest); `user_presence_15m`
   (application, 15-minute bucket, identified user; no payload) for distinct users per bucket; `span_stats_5m` per application, 5-minute bucket, instance,
-  source, operation (operationId or `queue/name`), origin, class and method, with total and self time
-  (duration minus direct children, at least 0, computed by the trace flattener) and the slowest span
-  of the row (`max_execution_id`, `max_trace_id`, `max_called_at`, `max_self_ms`). The user tables
-  were backfilled; `span_stats_5m` only covers spans ingested after migration 0007.
+  source, operation (operationId or `queue/name`), origin, class, method and span name (`''` for auto
+  spans and rows before migration 0017, ADR 0011), with total and self time
+  (duration minus direct children, at least 0, computed by the trace flattener), the slowest span
+  of the row (`max_execution_id`, `max_trace_id`, `max_called_at`, `max_self_ms`) and the latest failed
+  one (`error_*`). The user tables were backfilled; `span_stats_5m` only covers spans ingested after
+  migration 0007, and its names after 0017.
 - **Releases** ([ADR 0006](../../docs/adr/0006-releases.md)): `service_versions` holds one row per
   application, instance and version with its first and last sighting (the batch's execution time span,
   or receive time without executions), upserted at ingest after `services`; null versions are skipped.
@@ -207,6 +211,9 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
   `instance` (400). Services (`span_stats_5m`) starts at the 5-minute bucket containing `from`, leaves out
   outbound calls (lowercase class names such as `http`, `pg`), and its slowest spans are the `max_*`
   columns of the rollup rows.
+- Spans (`/spans`, `telemetry/spans`): the list, a span's stats and its samples read `span_stats_5m`
+  (manual spans by name, leaving out unnamed pre-0017 rows; auto spans by class and method), with
+  timelines of 5 minutes or wider. The calls of a manual span are a keyset page over `custom_spans`.
 - Timeline buckets use `date_bin` with a literal width from `bucketSeconds` (~100 buckets max). TimeBucket
   series are gap-filled in TS.
 - Select explicit columns, never `*`. Compose related data in one query (lateral join for top culprit) or

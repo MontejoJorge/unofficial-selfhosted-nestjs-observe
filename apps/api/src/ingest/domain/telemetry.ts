@@ -100,6 +100,28 @@ export interface SpanRecord {
   error: WireError | boolean | null;
 }
 
+/** A manual span with a name, stored one row per invocation (ADR 0011). */
+export interface CustomSpanRecord {
+  id: string;
+  /** the span's start: its execution's start plus its start offset */
+  calledAt: Date;
+  serviceId: string;
+  name: string;
+  source: ExecutionSource;
+  /** operationId for requests, `queue/name` for jobs */
+  operation: string;
+  executionId: string;
+  traceId: string;
+  spanId: string | null;
+  className: string;
+  methodName: string;
+  durationMs: number | null;
+  startOffsetMs: number | null;
+  hasError: boolean;
+  error: WireError | boolean | null;
+  tags: Tags | null;
+}
+
 export interface ErrorOccurrence {
   fingerprint: string;
   source: ExecutionSource;
@@ -181,6 +203,8 @@ export interface TelemetryBatchRecord {
   userPresence: UserPresence[];
   /** spans summed per 5 minutes, instance, operation and class method, ordered by key */
   spanRollups: SpanRollup[];
+  /** manual spans with a name, one per invocation */
+  customSpans: CustomSpanRecord[];
   errors: ErrorOccurrence[];
   logs: LogRecord[];
   runtime: RuntimeSample | null;

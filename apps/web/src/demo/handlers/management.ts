@@ -58,7 +58,7 @@ import {
   type ProjectState,
   type TrimState,
 } from '../store';
-import { RETENTION_DAYS, TIME } from '../world';
+import { RETENTION_DAYS, TIME, type SpanTemplate } from '../world';
 
 type Resolver = (args: {
   params: URLSearchParams;
@@ -189,10 +189,22 @@ const BYTES_PER_ROW: Record<StorageUsageTable, number> = {
   logs: 340,
   runtime_metrics: 190,
   custom_metrics: 120,
+  custom_spans: 260,
   profiles: 6200,
 };
 
 type Usage = Map<string, Map<string, Map<StorageUsageTable, number>>>;
+
+/** Manual spans with a name in a template tree: the `custom_spans` rows of one execution. */
+function customSpanCount(templates: readonly SpanTemplate[]): number {
+  return templates.reduce(
+    (sum, t) =>
+      sum +
+      (t.origin === 'manual' && t.name ? 1 : 0) +
+      customSpanCount(t.children ?? []),
+    0,
+  );
+}
 
 /** Rows per application, UTC day and table. */
 function usage(): Usage {
@@ -212,8 +224,14 @@ function usage(): Usage {
     byDay.set(day, byTable);
     byTable.set(table, (byTable.get(table) ?? 0) + rows);
   };
-  for (const r of requests) add(r.appId, r.t, 'requests');
-  for (const j of jobs) add(j.appId, j.t, 'jobs');
+  for (const r of requests) {
+    add(r.appId, r.t, 'requests');
+    add(r.appId, r.t, 'custom_spans', customSpanCount(r.op.spans));
+  }
+  for (const j of jobs) {
+    add(j.appId, j.t, 'jobs');
+    add(j.appId, j.t, 'custom_spans', customSpanCount(j.job.spans));
+  }
   for (const o of occurrences) add(o.appId, o.t, 'error_occurrences');
   for (const l of logs) add(l.appId, l.t, 'logs');
   for (const a of applications) {

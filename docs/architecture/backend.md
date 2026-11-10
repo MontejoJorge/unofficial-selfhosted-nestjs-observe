@@ -60,20 +60,20 @@ sends its own telemetry to its own ingest route (see [Self-observe](#self-observ
 `src/` is organized by feature. Each folder is a Nest module except `config/` (a validated class,
 loaded by `ConfigModule`) and `health/` (a single controller registered on `AppModule`).
 
-| Path                                       | Nest module(s)                                          | Owns                                                                                                                                                                                                      |
-| ------------------------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main.ts`, `app.module.ts`, `app.setup.ts` | `AppModule`                                             | Bootstrap: body parser (20 MB, gzip), `/api` prefix (ingest excluded), CORS, global `ValidationPipe`, Swagger UI at `/api/docs`.                                                                          |
-| `config/env.ts`                            | (`ConfigModule.forRoot`, global)                        | The `Env` class: every env var, its default and its validation.                                                                                                                                           |
-| `database/`                                | `DatabaseModule` (global)                               | The Kysely instance (`KYSELY` token), the typed schema, migrations, `PartitionManager`, bulk insert and cleanup helpers.                                                                                  |
-| `ingest/`                                  | `IngestModule`                                          | The write side: ingest controller, auth guard, wire mapping, Postgres writers.                                                                                                                            |
-| `projects/`                                | `ProjectsModule`, `ApiKeysModule`                       | Projects, applications, API keys (`/api/projects/...`). `ApiKeysModule` only holds `ApiKeyAuthenticator`, shared with ingest.                                                                             |
-| `telemetry/`                               | `TelemetryModule` + one module per area                 | The read side: `instances`, `overview`, `requests`, `jobs`, `errors`, `logs`, `traces`, `metrics`, `users`, `services`, `releases`, `map`, `data-days`. `common/` holds `ScopeModule` and shared helpers. |
-| `storage/`                                 | `StorageModule`                                         | Storage usage views and trim/purge requests ([ADR 0005](../adr/0005-storage-usage-and-trims.md)).                                                                                                         |
-| `maintenance/`                             | `MaintenanceModule`                                     | Hourly cron (`MaintenanceService`), `ApplicationPurger`, `StorageTrimmer`.                                                                                                                                |
-| `updates/`                                 | `UpdatesModule`                                         | Update check against GitHub releases ([ADR 0008](../adr/0008-update-check.md)).                                                                                                                           |
-| `self-observe/`, `observe.ts`              | `SelfObserveSwitchModule` (global), `SelfObserveModule` | The self-observe switch, the boot decision and the collector's own agent ([ADR 0009](../adr/0009-self-observe.md)).                                                                                       |
-| `health/`                                  | (controller on `AppModule`)                             | `GET /api/health`: `select 1`, 503 when the database is down.                                                                                                                                             |
-| `openapi/`                                 | none                                                    | `createOpenApiDocument` and `generate.ts`, which writes `apps/api/openapi.json`.                                                                                                                          |
+| Path                                       | Nest module(s)                                          | Owns                                                                                                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `main.ts`, `app.module.ts`, `app.setup.ts` | `AppModule`                                             | Bootstrap: body parser (20 MB, gzip), `/api` prefix (ingest excluded), CORS, global `ValidationPipe`, Swagger UI at `/api/docs`.                                                                                   |
+| `config/env.ts`                            | (`ConfigModule.forRoot`, global)                        | The `Env` class: every env var, its default and its validation.                                                                                                                                                    |
+| `database/`                                | `DatabaseModule` (global)                               | The Kysely instance (`KYSELY` token), the typed schema, migrations, `PartitionManager`, bulk insert and cleanup helpers.                                                                                           |
+| `ingest/`                                  | `IngestModule`                                          | The write side: ingest controller, auth guard, wire mapping, Postgres writers.                                                                                                                                     |
+| `projects/`                                | `ProjectsModule`, `ApiKeysModule`                       | Projects, applications, API keys (`/api/projects/...`). `ApiKeysModule` only holds `ApiKeyAuthenticator`, shared with ingest.                                                                                      |
+| `telemetry/`                               | `TelemetryModule` + one module per area                 | The read side: `instances`, `overview`, `requests`, `jobs`, `errors`, `logs`, `traces`, `metrics`, `users`, `services`, `spans`, `releases`, `map`, `data-days`. `common/` holds `ScopeModule` and shared helpers. |
+| `storage/`                                 | `StorageModule`                                         | Storage usage views and trim/purge requests ([ADR 0005](../adr/0005-storage-usage-and-trims.md)).                                                                                                                  |
+| `maintenance/`                             | `MaintenanceModule`                                     | Hourly cron (`MaintenanceService`), `ApplicationPurger`, `StorageTrimmer`.                                                                                                                                         |
+| `updates/`                                 | `UpdatesModule`                                         | Update check against GitHub releases ([ADR 0008](../adr/0008-update-check.md)).                                                                                                                                    |
+| `self-observe/`, `observe.ts`              | `SelfObserveSwitchModule` (global), `SelfObserveModule` | The self-observe switch, the boot decision and the collector's own agent ([ADR 0009](../adr/0009-self-observe.md)).                                                                                                |
+| `health/`                                  | (controller on `AppModule`)                             | `GET /api/health`: `select 1`, 503 when the database is down.                                                                                                                                                      |
+| `openapi/`                                 | none                                                    | `createOpenApiDocument` and `generate.ts`, which writes `apps/api/openapi.json`.                                                                                                                                   |
 
 How they depend on each other (global modules, `ConfigModule` and `DatabaseModule`, are used by
 almost everything and left out):
@@ -95,7 +95,7 @@ flowchart TD
   Projects --> Maint
   Storage --> Maint
   Storage --> Scope[ScopeModule]
-  Telemetry --> Features["requests, jobs, errors, logs, traces, metrics,<br/>users, services, releases, map, overview,<br/>instances, data-days"]
+  Telemetry --> Features["requests, jobs, errors, logs, traces, metrics,<br/>users, services, spans, releases, map, overview,<br/>instances, data-days"]
   Features --> Scope
   Agent --> Switch
 ```
@@ -227,7 +227,8 @@ sequenceDiagram
    execution and log ids as **UUIDv7 with the event time** (`uuid-v7.ts`), flattens span trees in
    memory (`trace-flattener.ts`, including self time), fingerprints errors (`error-fingerprint.ts`)
    and computes the rollup rows (`rollups.ts`: `rollUpRequests`, `rollUpJobs`, `rollUpUsers`,
-   `userPresence`, `rollUpSpans`, with the log-scale histogram of `latency-histogram.ts`).
+   `userPresence`, `rollUpSpans`, with the log-scale histogram of `latency-histogram.ts`), and picks
+   the manual spans with a name for `custom_spans` (`custom-spans.ts`).
 5. **Write.** `PostgresTelemetryWriter.write()` first makes sure the day partitions exist
    (`PartitionManager.ensureDays`, under a transaction-level advisory lock), then runs one
    transaction:
@@ -259,7 +260,7 @@ and `USAGE_TABLES`.
 
 | Kind                     | Tables                                                                                                                                                                                             | Kept for                                                                  |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Raw, day-partitioned     | `requests`, `jobs`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`                                                                                                               | `RETENTION_DAYS` (default 14)                                             |
+| Raw, day-partitioned     | `requests`, `jobs`, `error_occurrences`, `logs`, `runtime_metrics`, `custom_metrics`, `custom_spans` ([ADR 0011](../adr/0011-custom-spans.md))                                                     | `RETENTION_DAYS` (default 14)                                             |
 | Rollups, day-partitioned | `requests_1m`, `jobs_1m` ([ADR 0003](../adr/0003-minute-rollups.md)); `users_1h`, `user_presence_15m`, `span_stats_5m` ([ADR 0004](../adr/0004-users-and-time-breakdown.md))                       | `AGGREGATE_RETENTION_DAYS` (default 90, never less than `RETENTION_DAYS`) |
 | Plain telemetry          | `services`, `service_versions` ([ADR 0006](../adr/0006-releases.md)), `error_groups`, `error_group_culprits`, `profiles`, `application_usage` ([ADR 0005](../adr/0005-storage-usage-and-trims.md)) | Deleted by time in maintenance                                            |
 | Management               | `projects`, `applications`, `api_keys`, `application_purges`, `storage_trims`, `update_check`, `self_observe`                                                                                      | Forever                                                                   |
@@ -273,7 +274,8 @@ Key choices and where they are argued:
 - **No span table.** Each execution keeps its span tree as `jsonb` (`trace`), so a detail view is one
   read; spans are only flattened in memory to feed `span_stats_5m`. The `spans` table was dropped by
   migration 0009 (see the revisions of [ADR 0001](../adr/0001-storage.md) and
-  [ADR 0004](../adr/0004-users-and-time-breakdown.md)).
+  [ADR 0004](../adr/0004-users-and-time-breakdown.md)). Only the manual spans with a name get one row
+  per call, in `custom_spans`, for the Spans page ([ADR 0011](../adr/0011-custom-spans.md)).
 - **Every row carries `application_id`** and no foreign key to `applications`
   ([ADR 0002](../adr/0002-application-scoping.md)): a cascade into partitions would delete row by
   row. Deletes queue the ids in `application_purges`, and `ApplicationPurger` deletes table by table

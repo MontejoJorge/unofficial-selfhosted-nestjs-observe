@@ -233,6 +233,35 @@ export interface SpanStatsTable {
   max_called_at: Timestamp;
   max_self_ms: number;
   last_called_at: Timestamp;
+  /** span name of manual spans (ADR 0011), `''` for auto spans */
+  name: Generated<string>;
+  /** the latest failed span of the row, null without errors (ADR 0011) */
+  error_execution_id: string | null;
+  error_trace_id: string | null;
+  error_called_at: Timestamp | null;
+  error_ms: number | null;
+}
+
+/** One manual span with a name (`tracer.createSpan`), at its start time (ADR 0011). */
+export interface CustomSpansTable {
+  id: string;
+  called_at: Timestamp;
+  application_id: string;
+  service_id: string;
+  name: string;
+  source: string;
+  /** operationId for requests, `queue/name` for jobs */
+  operation: string;
+  execution_id: string;
+  trace_id: string;
+  span_id: string | null;
+  class_name: string;
+  method_name: string;
+  duration_ms: number | null;
+  start_offset_ms: number | null;
+  has_error: boolean;
+  error: Json | null;
+  tags: Json | null;
 }
 
 export interface ErrorGroupsTable {
@@ -368,6 +397,7 @@ export interface Database {
   users_1h: UsersHourTable;
   user_presence_15m: UserPresenceTable;
   span_stats_5m: SpanStatsTable;
+  custom_spans: CustomSpansTable;
   error_groups: ErrorGroupsTable;
   error_group_culprits: ErrorGroupCulpritsTable;
   error_occurrences: ErrorOccurrencesTable;
@@ -394,6 +424,7 @@ export const APPLICATION_SCOPED_TABLES = [
   'users_1h',
   'user_presence_15m',
   'span_stats_5m',
+  'custom_spans',
   'error_occurrences',
   'logs',
   'runtime_metrics',
@@ -418,6 +449,7 @@ export const PARTITIONED_TABLES = {
   users_1h: 'hour',
   user_presence_15m: 'bucket',
   span_stats_5m: 'bucket',
+  custom_spans: 'called_at',
 } as const satisfies Partial<Record<keyof Database, string>>;
 
 export type PartitionedTable = keyof typeof PARTITIONED_TABLES;
@@ -443,6 +475,7 @@ export const USAGE_TABLES = {
   logs: 'timestamp',
   runtime_metrics: 'sampled_at',
   custom_metrics: 'recorded_at',
+  custom_spans: 'called_at',
   profiles: 'received_at',
 } as const satisfies Partial<Record<keyof Database, string>>;
 

@@ -1,3 +1,4 @@
+import { customSpans } from './custom-spans.js';
 import { errorFingerprint } from './error-fingerprint.js';
 import {
   rollUpJobs,
@@ -163,6 +164,7 @@ export function mapTelemetryBatch(
     userRollups: rollUpUsers(requests),
     userPresence: userPresence(requests),
     spanRollups: rollUpSpans(spans),
+    customSpans: customSpans(spans),
     errors,
     logs,
     runtime: isRecord(batch.runtime)

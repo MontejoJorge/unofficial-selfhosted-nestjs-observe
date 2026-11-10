@@ -8,6 +8,7 @@ export const TABLE_LABELS: Record<StorageUsageTable, string> = {
   jobs: 'Jobs',
   runtime_metrics: 'Runtime metrics',
   custom_metrics: 'Custom metrics',
+  custom_spans: 'Custom spans',
   profiles: 'Profiles',
 };
 

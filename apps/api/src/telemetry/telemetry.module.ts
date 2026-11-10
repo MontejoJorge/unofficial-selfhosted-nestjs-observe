@@ -10,6 +10,7 @@ import { OverviewModule } from './overview/overview.module.js';
 import { ReleasesModule } from './releases/releases.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { ServicesModule } from './services/services.module.js';
+import { SpansModule } from './spans/spans.module.js';
 import { TracesModule } from './traces/traces.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module.js';
     MetricsModule,
     UsersModule,
     ServicesModule,
+    SpansModule,
     ReleasesModule,
     MapModule,
     DataDaysModule,
