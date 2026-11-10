@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-10
+
 ### Added
 
 - **Password sign-in.** Set `AUTH_PASSWORD` and the dashboard and its API ask for it; unset, nothing
@@ -183,7 +185,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First release. A drop-in collector and dashboard for the `@nestjs/observe` agent: requests, jobs,
 errors, logs, traces and runtime metrics in a single PostgreSQL database, shipped as a Docker image.
 
-[Unreleased]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.2.0...main
+[Unreleased]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.3.0...main
+[1.3.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v0.1.0...v1.0.0
