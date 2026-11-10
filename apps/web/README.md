@@ -12,7 +12,8 @@ pnpm --filter web dev
 ```
 
 Open http://localhost:5173. The API base URL comes from `VITE_API_URL` (default
-`http://localhost:3000`); set it in `apps/web/.env.local` if the collector runs elsewhere. The API
+`http://localhost:3000`); set it in the repo-root `.env`, next to `API_PORT`. `apps/web/.env*` files
+win over it (`.env.demo` configures demo mode). The API
 must allow the dashboard's origin in its CORS settings (it allows http://localhost:5173 by default).
 
 The typed API client in `src/lib/api/generated` is generated from `apps/api/openapi.json` before

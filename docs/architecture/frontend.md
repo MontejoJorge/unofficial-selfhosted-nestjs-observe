@@ -301,7 +301,8 @@ are grouped by resource and return the body directly (`--unwrap-response-data`);
 unions. Never hand-write an API type: if the dashboard needs a field, the backend adds it to the DTO
 and regenerates the spec.
 
-`API_URL` comes from `VITE_API_URL` (default `http://localhost:3000`). An empty value means same
+`API_URL` comes from `VITE_API_URL` (default `http://localhost:3000`), read from the repo-root `.env`
+(`vite.config.ts`) unless `apps/web/.env*` sets it, as `.env.demo` does. An empty value means same
 origin, which is what the Docker image builds with because the API serves the dashboard there.
 
 ## UI system

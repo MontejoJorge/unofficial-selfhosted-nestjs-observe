@@ -5,9 +5,8 @@ import viteConfig from './vite.config.ts';
 // so specs give the same output on every machine.
 process.env.TZ = 'UTC';
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
+export default defineConfig((env) =>
+  mergeConfig(viteConfig(env), {
     test: {
       include: ['src/**/*.spec.{ts,tsx}'],
       // Pure modules run in node; hook specs opt into jsdom with a
