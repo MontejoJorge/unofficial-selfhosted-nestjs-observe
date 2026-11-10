@@ -169,6 +169,11 @@ are named exports; the dynamic import picks the one it needs.
   boundary and calls `revalidator.revalidate()`. The root route has the same boundary as a last
   resort for errors in the shell itself.
 - **Unknown paths**: `{ path: '*', Component: NotFound }`.
+- **Sign-in**: the root route's middleware (`requireSession`, before any loader) reads `sessionQueryOptions()` and
+  redirects to `/login?next=…` when the collector has a password and the browser has no session.
+  Any 401 from a query or mutation does the same, through the `QueryCache`/`MutationCache` `onError`
+  in `router.tsx`. `/login` sits outside the shell. Signing in or out clears the query cache
+  ([ADR 0010](../adr/0010-password-sign-in.md)).
 
 ### Restoring the time window
 

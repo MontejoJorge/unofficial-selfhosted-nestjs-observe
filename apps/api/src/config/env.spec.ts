@@ -65,6 +65,14 @@ describe('validateEnv', () => {
     expect(env.DASHBOARD_DIR).toBe('/app/web');
     expect(env.OBSERVE_ENDPOINT).toBe('http://localhost:3000');
   });
+
+  it('turns authentication on with AUTH_PASSWORD, and off when empty', () => {
+    expect(validateEnv({ AUTH_PASSWORD: 's3cret' }).AUTH_PASSWORD).toBe(
+      's3cret',
+    );
+    expect(validateEnv({ AUTH_PASSWORD: '' }).AUTH_PASSWORD).toBeUndefined();
+    expect(validateEnv({}).AUTH_PASSWORD).toBeUndefined();
+  });
 });
 
 describe('databaseOptions', () => {

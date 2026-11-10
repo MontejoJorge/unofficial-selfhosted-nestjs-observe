@@ -6,8 +6,10 @@ export const paths = {
   projects: '/projects',
   /** Database size, tables, projects and day partitions of the whole instance. */
   storage: '/storage',
-  /** Settings of the whole collector (update check, self-observe). */
+  /** Settings of the whole collector (update check, self-observe, sign-in). */
   instanceSettings: '/settings',
+  /** Password sign-in, when the collector has AUTH_PASSWORD set; `?next=` path to return to. */
+  login: '/login',
   project,
   applications: (p: string) => `${project(p)}/applications`,
   /** Operations table. */

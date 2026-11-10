@@ -343,6 +343,12 @@ export interface SelfObserveTable {
   application_id: string | null;
 }
 
+export interface AuthSettingsTable {
+  id: ColumnType<number, never, never>;
+  session_days: number;
+  session_secret: string;
+}
+
 export interface Database {
   projects: ProjectsTable;
   applications: ApplicationsTable;
@@ -352,6 +358,7 @@ export interface Database {
   storage_trims: StorageTrimsTable;
   update_check: UpdateCheckTable;
   self_observe: SelfObserveTable;
+  auth_settings: AuthSettingsTable;
   services: ServicesTable;
   service_versions: ServiceVersionsTable;
   requests: RequestsTable;

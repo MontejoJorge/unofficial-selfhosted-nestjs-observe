@@ -11,6 +11,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { sql } from 'kysely';
+import { Public } from '../auth/http/public.decorator.js';
 import { KYSELY, type Db } from '../database/database.types.js';
 
 export class HealthDto {
@@ -19,6 +20,7 @@ export class HealthDto {
 }
 
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(@Inject(KYSELY) private readonly db: Db) {}

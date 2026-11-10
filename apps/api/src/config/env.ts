@@ -85,6 +85,18 @@ export class Env {
   @IsBoolean()
   UPDATE_CHECK: boolean = true;
 
+  /**
+   * Password for the dashboard and the query API (ADR 0010). Unset or empty: no sign-in.
+   * The ingest routes keep using API keys.
+   */
+  @Transform(({ obj, key }: RawTransform) => {
+    const value = obj[key];
+    return typeof value === 'string' && value !== '' ? value : undefined;
+  })
+  @IsOptional()
+  @IsString()
+  AUTH_PASSWORD?: string;
+
   /** Built dashboard to serve from `/` (set in the Docker image). Unset: API only. */
   @IsOptional()
   @IsString()

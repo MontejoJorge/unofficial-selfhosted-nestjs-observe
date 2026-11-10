@@ -6,6 +6,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { SignOutButton } from '@/features/auth/sign-out-button';
 import { LiveProvider } from '@/features/live/live-provider';
 import { ThemeToggle } from '@/features/theme/theme-toggle';
 import { VersionLine } from '@/features/updates/version-line';
@@ -59,7 +60,10 @@ function RailLink({
   );
 }
 
-/** Narrow far-left rail: the mark, the projects, storage and settings shortcuts, and the theme toggle. */
+/**
+ * Narrow far-left rail: the mark, the projects, storage and settings shortcuts, the theme
+ * toggle and, when the collector asks for a password, sign out.
+ */
 function Rail() {
   const atProjects = useMatch('/projects/*') !== null;
   const atStorage = useMatch('/storage') !== null;
@@ -89,8 +93,9 @@ function Rail() {
           active={atSettings}
         />
       </div>
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col items-center gap-1">
         <ThemeToggle />
+        <SignOutButton />
       </div>
     </div>
   );
@@ -158,8 +163,9 @@ export function AppShell() {
           <header className="relative flex h-[72px] shrink-0 items-center gap-3 px-4 md:px-8 lg:px-[60px]">
             <MobileNav />
             <GlobalSearch />
-            <div className="ml-auto lg:hidden">
+            <div className="ml-auto flex items-center gap-1 lg:hidden">
               <ThemeToggle />
+              <SignOutButton />
             </div>
             {/* Pending UI while a navigation's loaders run. */}
             <div

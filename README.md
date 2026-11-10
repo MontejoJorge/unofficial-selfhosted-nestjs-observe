@@ -74,6 +74,7 @@ the stack and keeps the data (`down -v` deletes it).
 | `RETENTION_DAYS`           | `14`     | Days of telemetry to keep.                             |
 | `AGGREGATE_RETENTION_DAYS` | `90`     | Days of charts and stats to keep (per-minute rollups). |
 | `UPDATE_CHECK`             | `true`   | Look up the latest release on GitHub every 6 hours.    |
+| `AUTH_PASSWORD`            | (none)   | Password for the dashboard. Unset: no sign-in.         |
 
 ## Connect your NestJS app
 
@@ -111,14 +112,18 @@ call public APIs, so it produces multi-span traces, logs and errors to try the d
 
 ## Security
 
-> [!WARNING]
-> The dashboard and its API (`/api/*`) have **no authentication yet**: anyone who reaches the port can
-> read telemetry and manage API keys.
+Set `AUTH_PASSWORD` to make the dashboard and its API (`/api/*`) ask for a password. A sign-in lasts
+30 days by default; change the length or sign out every browser in **Collector settings**. Without it,
+anyone who reaches the port can read telemetry and manage API keys.
 
-Keep the port on a private network or VPN, or put an authenticating reverse proxy in front of it
-(oauth2-proxy, Authelia, basic auth). Agents only need `POST /applications/telemetry` and
-`POST /applications/profiles`, which are protected by the application's API key, so those two paths can
-bypass the proxy's login. Secrets are stored hashed and can be revoked from the dashboard.
+> [!WARNING]
+> Without `AUTH_PASSWORD`, keep the port on a private network or VPN, or put an authenticating reverse
+> proxy in front of it (oauth2-proxy, Authelia, basic auth).
+
+Agents only need `POST /applications/telemetry` and `POST /applications/profiles`, which are protected by
+the application's API key and never by the password, so those two paths can bypass a proxy's login.
+Secrets are stored hashed and can be revoked from the dashboard. Serve the collector over HTTPS when it
+is reachable from the internet, so the password and the session cookie are encrypted.
 
 ## Development
 

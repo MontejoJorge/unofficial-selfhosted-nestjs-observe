@@ -4,6 +4,7 @@
  */
 
 import { setupWorker } from 'msw/browser';
+import { authHandlers } from './handlers/auth';
 import { managementHandlers } from './handlers/management';
 import { mapHandlers } from './handlers/map';
 import { releaseHandlers } from './handlers/releases';
@@ -23,6 +24,7 @@ export async function startDemo(): Promise<void> {
     ...managementHandlers,
     ...updateHandlers,
     ...selfObserveHandlers,
+    ...authHandlers,
   );
   await worker.start({
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },

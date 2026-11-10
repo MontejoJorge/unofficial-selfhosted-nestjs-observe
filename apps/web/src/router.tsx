@@ -4,6 +4,11 @@ import { RouteError } from '@/components/route-error';
 import { PageSkeleton } from '@/components/states';
 import { apiKeysQueryOptions } from '@/features/api-keys/queries';
 import { applicationsQueryOptions } from '@/features/applications/queries';
+import { loginHref, safeNext } from '@/features/auth/login-path';
+import {
+  authSettingsQueryOptions,
+  sessionQueryOptions,
+} from '@/features/auth/queries';
 import {
   errorGroupQueryOptions,
   errorGroupsQueryOptions,
@@ -55,14 +60,34 @@ import { pickWindow, scopeFromParams, windowFromParams } from '@/lib/api/scope';
 import { paths } from '@/lib/paths';
 import { parseRequestSearch } from '@/lib/search';
 import { readStoredWindow, withStoredWindow } from '@/lib/stored-window';
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import {
   createBrowserRouter,
   redirect,
   type LoaderFunctionArgs,
+  type MiddlewareFunction,
 } from 'react-router';
 
+/**
+ * A 401 means the session ended (expired, signed out elsewhere, password changed): mark it
+ * signed out and go to the sign-in page, coming back here afterwards.
+ */
+function onUnauthorized(error: unknown) {
+  if (errorStatus(error) !== 401) return;
+  const location = router.state.navigation.location ?? router.state.location;
+  if (location.pathname === paths.login) return;
+  queryClient.setQueryData(sessionQueryOptions().queryKey, {
+    enabled: true,
+    authenticated: false,
+  });
+  void router.navigate(loginHref(location.pathname + location.search), {
+    replace: true,
+  });
+}
+
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: onUnauthorized }),
+  mutationCache: new MutationCache({ onError: onUnauthorized }),
   defaultOptions: {
     queries: {
       staleTime: 30_000,
@@ -92,15 +117,39 @@ const scopeOf = ({ request, params }: LoaderFunctionArgs) =>
 /** Vite's `base` (e.g. the demo on GitHub Pages under /<repo>/), without the trailing slash. */
 const BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '');
 
+/** The app path of a request URL, without the basename. */
+const appPath = (url: URL) =>
+  url.pathname.startsWith(BASENAME)
+    ? url.pathname.slice(BASENAME.length) || '/'
+    : url.pathname;
+
+/**
+ * With AUTH_PASSWORD set on the collector, the app needs a session first. A middleware, so
+ * it runs before any loader fires a request that would only get a 401.
+ */
+const requireSession: MiddlewareFunction = async ({ request }) => {
+  const session = await queryClient.ensureQueryData(sessionQueryOptions());
+  if (session.enabled && !session.authenticated) {
+    const url = new URL(request.url);
+    throw redirect(loginHref(appPath(url) + url.search));
+  }
+};
+
+/** The sign-in page only makes sense while signed out. */
+async function redirectIfSignedIn({ request }: LoaderFunctionArgs) {
+  const session = await queryClient.ensureQueryData(sessionQueryOptions());
+  if (!session.enabled || session.authenticated) {
+    return redirect(safeNext(new URL(request.url).searchParams.get('next')));
+  }
+  return null;
+}
+
 /** A URL without a time window opens on the one picked last time (localStorage). */
 function restoreTimeWindow({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const search = withStoredWindow(url.searchParams, readStoredWindow());
   if (!search) return null;
-  const path = url.pathname.startsWith(BASENAME)
-    ? url.pathname.slice(BASENAME.length) || '/'
-    : url.pathname;
-  return redirect(`${path}?${search}`);
+  return redirect(`${appPath(url)}?${search}`);
 }
 
 const projectOf = ({ params }: LoaderFunctionArgs) =>
@@ -114,8 +163,18 @@ const projectOf = ({ params }: LoaderFunctionArgs) =>
 export const router = createBrowserRouter(
   [
     {
+      path: '/login',
+      loader: redirectIfSignedIn,
+      HydrateFallback: PageSkeleton,
+      ErrorBoundary: RouteError,
+      lazy: async () => ({
+        Component: (await import('@/features/auth/login-page')).LoginPage,
+      }),
+    },
+    {
       path: '/',
       Component: AppShell,
+      middleware: [requireSession],
       HydrateFallback: PageSkeleton,
       ErrorBoundary: RouteError,
       children: [
@@ -157,6 +216,7 @@ export const router = createBrowserRouter(
                 await Promise.all([
                   queryClient.ensureQueryData(updateStatusQueryOptions()),
                   queryClient.ensureQueryData(selfObserveQueryOptions()),
+                  queryClient.ensureQueryData(authSettingsQueryOptions()),
                 ]);
               },
               lazy: async () => ({

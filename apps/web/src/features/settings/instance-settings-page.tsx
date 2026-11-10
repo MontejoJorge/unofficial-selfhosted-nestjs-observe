@@ -1,4 +1,5 @@
 import { Page, PageHeader, PageTitle } from '@/components/page';
+import { SignInPanel } from '@/features/auth/sign-in-panel';
 import { SelfObservePanel } from '@/features/self-observe/self-observe-panel';
 import { UpdatesPanel } from '@/features/updates/updates-panel';
 
@@ -13,6 +14,7 @@ export function InstanceSettingsPage() {
       </PageHeader>
       <UpdatesPanel />
       <SelfObservePanel />
+      <SignInPanel />
     </Page>
   );
 }

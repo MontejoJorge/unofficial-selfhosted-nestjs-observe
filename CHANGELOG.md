@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Password sign-in.** Set `AUTH_PASSWORD` and the dashboard and its API ask for it; unset, nothing
+  changes. Sessions are signed `HttpOnly` cookies that last 30 days by default. Collector settings has a
+  Sign-in panel to change the length (1 to 365 days) and to sign out every browser. Ingest keeps using API
+  keys. See [ADR 0010](docs/adr/0010-password-sign-in.md).
+
 ### Changed
 
 - The project is now `unofficial-selfhosted-nestjs-observe`, to make clear it is not an official NestJS

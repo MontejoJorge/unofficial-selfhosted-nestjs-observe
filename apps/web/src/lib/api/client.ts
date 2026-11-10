@@ -11,8 +11,11 @@ export const API_URL =
     '',
   ) || window.location.origin;
 
-/** The single generated API client. Only queryOptions factories use it. */
-export const api = new Api({ baseURL: API_URL });
+/**
+ * The single generated API client. Only queryOptions factories use it. Credentials send
+ * the session cookie when the dashboard runs on another port than the API (development).
+ */
+export const api = new Api({ baseURL: API_URL, withCredentials: true });
 
 /** HTTP status of a failed call, `0` when the API could not be reached, `undefined` otherwise. */
 export function errorStatus(error: unknown): number | undefined {

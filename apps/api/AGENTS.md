@@ -21,7 +21,7 @@ pnpm api:generate                   # regenerate apps/api/openapi.json and the w
 
 Validated at boot by `src/config/env.ts` (class-validator). Loaded from `apps/api/.env`, then the root `.env`;
 real environment variables win. The migrate CLI (`src/database/migrate.ts`) uses the same schema.
-CORS allows every origin.
+CORS allows every origin, with credentials (the session cookie is `SameSite=Lax`).
 
 | Variable                    | Default     | Notes                                        |
 | --------------------------- | ----------- | -------------------------------------------- |
@@ -36,6 +36,7 @@ CORS allows every origin.
 | `RETENTION_DAYS`            | `14`        | daily partitions older than this are dropped |
 | `AGGREGATE_RETENTION_DAYS`  | `90`        | same for the rollups (min: RETENTION_DAYS)   |
 | `UPDATE_CHECK`              | `true`      | latest GitHub release every 6 h (ADR 0008)   |
+| `AUTH_PASSWORD`             | (unset)     | dashboard/query API sign-in (ADR 0010)       |
 
 ## Layout
 
@@ -43,6 +44,8 @@ CORS allows every origin.
 src/
   main.ts, app.module.ts, app.setup.ts   bootstrap; global /api prefix (ingest excluded), CORS, pipes, Swagger UI
   config/env.ts                          env schema
+  auth/                                  password sign-in (ADR 0010): signed session cookie, global
+                                         SessionAuthGuard, @Public() for health, sign-in and ingest
   database/                              Kysely instance (KYSELY token), typed schema, migrations, partitions
     database.types.ts                    Database interface; keep in sync with migrations by hand
     migrations/                          one file per migration + index.ts (explicit provider)

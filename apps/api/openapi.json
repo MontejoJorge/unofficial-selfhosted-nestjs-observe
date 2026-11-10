@@ -79,6 +79,150 @@
         ]
       }
     },
+    "/api/auth/session": {
+      "get": {
+        "operationId": "getSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Whether sign-in is required, and whether this request is signed in",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "description": "Sets the HttpOnly session cookie. After 10 wrong passwords in 15 minutes from one address, sign-in is refused (429) until the window ends.",
+        "operationId": "login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "Wrong password"
+          },
+          "409": {
+            "description": "AUTH_PASSWORD is not set"
+          },
+          "429": {
+            "description": "Too many failed sign-ins"
+          }
+        },
+        "summary": "Sign in with the collector password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Sign out this browser",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/settings": {
+      "get": {
+        "operationId": "getAuthSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Session lifetime",
+        "tags": [
+          "auth"
+        ]
+      },
+      "patch": {
+        "description": "Applies to existing sessions too: a shorter lifetime signs out the older ones. The browser cookie's own expiry is set at sign-in, so a longer lifetime counts from the next one.",
+        "operationId": "updateAuthSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAuthSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSettingsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change the session lifetime",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/sessions/revoke": {
+      "post": {
+        "description": "Rotates the signing secret, which ends every session, and signs this browser in again.",
+        "operationId": "signOutEverywhere",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "409": {
+            "description": "AUTH_PASSWORD is not set"
+          }
+        },
+        "summary": "Sign out every other browser",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/projects": {
       "get": {
         "operationId": "listProjects",
@@ -3288,6 +3432,67 @@
         },
         "required": [
           "enabled"
+        ]
+      },
+      "AuthStatusDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "AUTH_PASSWORD is set: the dashboard and the query API need a session."
+          },
+          "authenticated": {
+            "type": "boolean",
+            "description": "The request carries a valid session (always true when authentication is off)."
+          }
+        },
+        "required": [
+          "enabled",
+          "authenticated"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "The collector's AUTH_PASSWORD.",
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "AuthSettingsDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "AUTH_PASSWORD is set; when off, the lifetime is kept but unused."
+          },
+          "sessionDays": {
+            "type": "number",
+            "description": "Days a session lasts after signing in."
+          }
+        },
+        "required": [
+          "enabled",
+          "sessionDays"
+        ]
+      },
+      "UpdateAuthSettingsDto": {
+        "type": "object",
+        "properties": {
+          "sessionDays": {
+            "type": "number",
+            "description": "Days a session lasts after signing in. Shortening it also ends older sessions.",
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": [
+          "sessionDays"
         ]
       },
       "TimeRange": {

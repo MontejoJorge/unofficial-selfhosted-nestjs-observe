@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { Public } from '../../auth/http/public.decorator.js';
 import { IngestProfilesUseCase } from '../application/ingest-profiles.use-case.js';
 import { IngestTelemetryUseCase } from '../application/ingest-telemetry.use-case.js';
 import type { WireIngestReply } from '../domain/wire.js';
@@ -12,9 +13,11 @@ import {
 /**
  * Endpoints called by the @nestjs/observe agent (see docs/protocol.md). They are a
  * contract with a third party: paths and response semantics must not change.
- * Served outside the `/api` prefix.
+ * Served outside the `/api` prefix, and authenticated by API key instead of the
+ * dashboard's session.
  */
 @ApiExcludeController()
+@Public()
 @Controller('applications')
 @UseGuards(IngestAuthGuard)
 export class IngestController {

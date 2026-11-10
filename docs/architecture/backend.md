@@ -401,6 +401,15 @@ credentials generated in memory (`SelfCredentials`) and posts to `http://127.0.0
 every flush would trace the next one), and names the sending application as the "user" of an ingest
 request. The reasoning is in [ADR 0009](../adr/0009-self-observe.md).
 
+### Sign-in
+
+`auth/` adds an optional password (`AUTH_PASSWORD`). `SessionAuthGuard` is registered as a global
+`APP_GUARD`: with the password set, every route needs the `observe_session` cookie, except those
+marked `@Public()` (health, `GET /api/auth/session`, login, logout and the ingest controller, which
+keeps its API-key guard). The cookie is a stateless HMAC of its issue time, signed with a key derived
+from the password and a random secret in `auth_settings`. The same row holds the session length set in
+Collector settings. The reasoning is in [ADR 0010](../adr/0010-password-sign-in.md).
+
 ### Logging
 
 Plain Nest `Logger` instances with a context name (`Database`, `Migrator`, `SelfObserve`,

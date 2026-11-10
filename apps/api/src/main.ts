@@ -24,8 +24,10 @@ async function bootstrap() {
   // Ingest routes keep the paths the agent expects; the query API lives under /api.
   applyGlobalPrefix(app);
   // Any origin may call the API: the dashboard can be served from anywhere, and the
-  // ingest routes are authenticated by API key, not by cookies.
-  app.enableCors({ origin: true });
+  // ingest routes are authenticated by API key. Credentials let a dashboard on another
+  // port of the same site send its session cookie; SameSite=Lax keeps other sites from
+  // using it (ADR 0010).
+  app.enableCors({ origin: true, credentials: true });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
