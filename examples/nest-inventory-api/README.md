@@ -95,6 +95,20 @@ $ curl -X POST -H 'content-type: application/json' -d '{"quantity":2}' http://lo
 
 `@nestjs/observe` 0.3.20 traces `pg`, `mysql2`, `mssql` and `mongodb` queries on its own, but not SQLite. So `src/database/traced-dialect.ts` wraps the Kysely dialect and runs every query in a manual span (`TracerService.createSpan`), named like the agent's SQL spans - `SELECT stock`, `INSERT reservations`, `BEGIN` - and tagged with `db.system: sqlite` and `db.statement` (the compiled SQL, values as `?` placeholders). A failing query fails its span. Repositories use Kysely as usual and never see the spans.
 
+## Custom spans
+
+Besides the SQL spans, a few steps run in custom spans of their own, through the `inSpan` helper in `src/common/span.ts` (`TracerService.createSpan`, tags added with `span.addTags`). They show up by name on the collector's **Spans** page:
+
+| Span                    | Where                                        | Tags                     |
+| ----------------------- | -------------------------------------------- | ------------------------ |
+| `catalog.rank`          | `GET /catalog/insights`                      | `products`               |
+| `pricing.apply-rules`   | `GET /catalog/insights` (fails with `fail`)  | `products`, `categories` |
+| `stock.reserve`         | `POST /stock/:productId/reservations`        | `productId`, `quantity`  |
+| `inventory.sync`        | `inventory-reconcile` job (SQL spans nested) | `products`, `offset`     |
+| `warehouse.save-report` | `inventory-reconcile` job (fails ~20%)       | `items`                  |
+
+The agent only records a span inside a traced request or job: called at startup, `createSpan` runs the work without a span.
+
 ## Scheduled jobs
 
 `src/jobs` has two `@nestjs/schedule` cron jobs, traced as jobs:

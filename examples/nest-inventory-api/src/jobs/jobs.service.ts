@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { TracerService } from '@nestjs/observe';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { DummyProduct } from '../catalog/catalog.types.js';
 import { getJson } from '../common/http/get-json.js';
+import { inSpan } from '../common/span.js';
 import type { PokemonResponse } from '../pokemon/pokemon.types.js';
 import { StockRepository } from '../stock/stock.repository.js';
 
@@ -28,7 +30,10 @@ interface FeaturedPokemon {
 export class JobsService {
   private readonly logger = new Logger(JobsService.name);
 
-  constructor(private readonly stock: StockRepository) {}
+  constructor(
+    private readonly stock: StockRepository,
+    private readonly tracer: TracerService,
+  ) {}
 
   /** Every minute: picks a few random pokemon and ranks them by total base stats. */
   @Cron(CronExpression.EVERY_MINUTE, { name: 'featured-pokemon' })
@@ -53,12 +58,23 @@ export class JobsService {
     // Half the runs sync the first page, the 30 products the load generator reserves.
     const skip = Math.random() < 0.5 ? 0 : randomInt(150);
     const { products } = await this.fetchProductsPage(skip);
-    await this.syncStock(products);
+    // Custom spans around the steps: the SQL spans nest under `inventory.sync`.
+    await inSpan(
+      this.tracer,
+      'inventory.sync',
+      { products: products.length, offset: skip },
+      () => this.syncStock(products),
+    );
     const released = await this.stock.releaseReservationsBefore(
       new Date(Date.now() - RESERVATION_TTL_MS),
     );
     const lowStock = this.findLowStock(products);
-    await this.persistReport(lowStock);
+    await inSpan(
+      this.tracer,
+      'warehouse.save-report',
+      { items: lowStock.length },
+      () => this.persistReport(lowStock),
+    );
     this.logger.log(
       `Reconciled ${products.length} products from offset ${skip}: ${lowStock.length} low on stock, ${released} reservations released`,
     );

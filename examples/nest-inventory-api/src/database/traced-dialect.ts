@@ -6,6 +6,7 @@ import type {
   Driver,
   QueryResult,
 } from 'kysely';
+import { inSpan } from '../common/span.js';
 
 const MAX_STATEMENT_LENGTH = 2048;
 
@@ -139,7 +140,12 @@ class TracedConnection implements DatabaseConnection {
   ): Promise<QueryResult<R>> {
     const run = () => this.raw.executeQuery<R>(compiledQuery, ...args);
     const { operation, statement } = describeSql(compiledQuery.sql);
-    return inSpan(this.tracer, operation, statement, run);
+    return inSpan(
+      this.tracer,
+      operation,
+      { 'db.system': 'sqlite', 'db.statement': statement },
+      run,
+    );
   }
 
   /** Streams are passed through untraced: a span would end before the rows are read. */
@@ -147,31 +153,6 @@ class TracedConnection implements DatabaseConnection {
     ...args: Parameters<DatabaseConnection['streamQuery']>
   ): AsyncIterableIterator<QueryResult<R>> {
     return this.raw.streamQuery<R>(...args);
-  }
-}
-
-/**
- * Runs `query` inside a span. Outside a traced operation (startup migrations,
- * a sampled-out request) `createSpan` refuses before calling back, and the
- * query runs on its own. A query error rejects the span, which marks it
- * failed, and still reaches the caller.
- */
-async function inSpan<T>(
-  tracer: TracerService,
-  name: string,
-  statement: string,
-  query: () => Promise<T>,
-): Promise<T> {
-  let started = false;
-  try {
-    return (await tracer.createSpan(name, (span) => {
-      started = true;
-      span.addTags({ 'db.system': 'sqlite', 'db.statement': statement });
-      return query();
-    })) as T;
-  } catch (error) {
-    if (started) throw error;
-    return query();
   }
 }
 

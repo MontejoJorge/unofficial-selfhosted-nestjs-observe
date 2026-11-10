@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { TracerService } from '@nestjs/observe';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { getJson } from '../common/http/get-json.js';
 import { average, round2 } from '../common/round.js';
+import { inSpan } from '../common/span.js';
 import { DummyProduct } from './catalog.types.js';
 import {
   CatalogInsightsDto,
@@ -14,6 +16,8 @@ const DUMMYJSON_URL = 'https://dummyjson.com';
 export class CatalogService {
   private readonly logger = new Logger(CatalogService.name);
 
+  constructor(private readonly tracer: TracerService) {}
+
   async getInsights(
     categories: string[],
     fail: boolean,
@@ -25,8 +29,20 @@ export class CatalogService {
       categories.map((category) => this.fetchCategoryProducts(category)),
     );
 
-    const ranked = this.rankProducts(productsByCategory.flat());
-    const priced = await this.applyPricingRules(ranked, fail);
+    const products = productsByCategory.flat();
+    // Custom spans: they show up by name on the Spans page.
+    const ranked = await inSpan(
+      this.tracer,
+      'catalog.rank',
+      { products: products.length },
+      () => this.rankProducts(products),
+    );
+    const priced = await inSpan(
+      this.tracer,
+      'pricing.apply-rules',
+      { products: ranked.length, categories: categories.length },
+      () => this.applyPricingRules(ranked, fail),
+    );
 
     return {
       categories: categories.map((category, index) => ({

@@ -4,6 +4,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { TracerService } from '@nestjs/observe';
+import { inSpan } from '../common/span.js';
 import type { StockRow } from '../database/database.types.js';
 import { ReservationDto, StockLevelDto } from './dto/stock.dto.js';
 import { StockRepository } from './stock.repository.js';
@@ -14,7 +16,10 @@ const LOW_STOCK_LIMIT = 10;
 export class StockService {
   private readonly logger = new Logger(StockService.name);
 
-  constructor(private readonly stock: StockRepository) {}
+  constructor(
+    private readonly stock: StockRepository,
+    private readonly tracer: TracerService,
+  ) {}
 
   async getLevel(productId: number): Promise<StockLevelDto> {
     const row = await this.stock.findByProductId(productId);
@@ -32,7 +37,12 @@ export class StockService {
     quantity: number,
     userId: string | null,
   ): Promise<ReservationDto> {
-    const result = await this.stock.reserve(productId, quantity, userId);
+    const result = await inSpan(
+      this.tracer,
+      'stock.reserve',
+      { productId, quantity },
+      () => this.stock.reserve(productId, quantity, userId),
+    );
     switch (result.status) {
       case 'not-found':
         throw new NotFoundException(`No stock for product ${productId}`);
