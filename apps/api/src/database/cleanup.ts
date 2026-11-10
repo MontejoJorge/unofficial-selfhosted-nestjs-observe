@@ -46,3 +46,40 @@ export async function vacuumTable(
     logger.warn(`VACUUM of ${table} failed: ${String(error)}`);
   }
 }
+
+/** How long `truncateIfEmpty` waits for its lock before giving up. */
+const TRUNCATE_LOCK_TIMEOUT = '2s';
+
+/**
+ * Empties a partition left with no rows: `TRUNCATE` hands its heap, TOAST and index files
+ * back to the OS, which a plain `VACUUM` never does for the indexes. The partition is
+ * locked before the check, so rows ingested meanwhile are never lost: it is only
+ * truncated when it is still empty. Gives up (false) when the lock is busy for longer
+ * than `TRUNCATE_LOCK_TIMEOUT` or the partition has rows; failures are logged, not
+ * thrown.
+ */
+export async function truncateIfEmpty(
+  db: Db,
+  partition: string,
+  logger: Logger,
+): Promise<boolean> {
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await sql`set local lock_timeout = ${sql.lit(TRUNCATE_LOCK_TIMEOUT)}`.execute(
+        trx,
+      );
+      await sql`lock table ${sql.table(partition)} in access exclusive mode`.execute(
+        trx,
+      );
+      const { rows } = await sql<{ empty: boolean }>`
+        select not exists (select 1 from ${sql.table(partition)}) as empty
+      `.execute(trx);
+      if (!rows[0].empty) return false;
+      await sql`truncate ${sql.table(partition)}`.execute(trx);
+      return true;
+    });
+  } catch (error) {
+    logger.warn(`TRUNCATE of ${partition} failed: ${String(error)}`);
+    return false;
+  }
+}

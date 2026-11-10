@@ -28,11 +28,10 @@ logged). That makes the space reusable at once and returns the heap's trailing e
 index space, and the heap only when `VACUUM` gets its brief exclusive lock (it skips the truncation
 otherwise): after the demo purge and a manual `VACUUM`, `requests_p20261028` has no live rows and still
 takes 432 MB of heap and 315 MB of indexes, while the `logs` partitions went down to their indexes
-(5.4 GB database for ~11 k live rows). Remaining options:
+(5.4 GB database for ~11 k live rows). A partition left with no rows is now truncated
+(`truncateIfEmpty`, ADR 0005), so this only remains for partitions shared with other applications.
+Remaining options:
 
-- `TRUNCATE` (or detach and drop) a partition when the purged or trimmed applications are the only ones
-  in it (no rows left from others: `application_usage` tells which), and only `DELETE` from partitions
-  shared with other applications. `TRUNCATE` takes an `ACCESS EXCLUSIVE` lock, short on an old partition.
 - `REINDEX CONCURRENTLY` the indexes of partitions that lost most of their rows, to give the index
   space back.
 - Partition (or sub-partition) by application as well as by day, so deleting an application is a

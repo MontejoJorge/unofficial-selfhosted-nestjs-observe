@@ -19,6 +19,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   spans are stored one row per call in the new `custom_spans` table, kept for `RETENTION_DAYS`. Data starts
   with this version. See [ADR 0011](docs/adr/0011-custom-spans.md).
 
+### Fixed
+
+- Deleting an application or its data, or trimming old data, now truncates the day partitions it leaves
+  without rows, so their space (indexes included) goes back to the disk at once. A plain `VACUUM` kept
+  them at full size, shown as "Not attributed" in Storage, until retention dropped them.
+
 ### Changed
 
 - The project is now `unofficial-selfhosted-nestjs-observe`, to make clear it is not an official NestJS

@@ -30,9 +30,10 @@ const ESTIMATE =
   'Each day partition is split between applications by the payload bytes counted at ingest.';
 
 const FREED_SPACE =
-  'Deleted rows free their space for reuse by new telemetry right away; the VACUUM run ' +
-  'after each partition gives only the empty pages at its end back to the OS, so the ' +
-  'database shrinks partly until the partitions age out of RETENTION_DAYS.';
+  'Deleted rows free their space for reuse by new telemetry right away. A partition left ' +
+  'without rows is truncated, which gives all its space back; in partitions that keep ' +
+  'rows, the VACUUM run after the delete gives only the empty pages at the end back to ' +
+  'the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.';
 
 @ApiTags('storage')
 @Controller()

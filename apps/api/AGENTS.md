@@ -51,7 +51,7 @@ src/
     migrations/                          one file per migration + index.ts (explicit provider)
     partition-manager.ts                 create/drop daily partitions
     batch-insert.ts                      chunked multi-row INSERT, jsonb/text sanitizing
-    cleanup.ts                           batched DELETE by ctid, VACUUM of one table or partition
+    cleanup.ts                           batched DELETE by ctid, VACUUM, TRUNCATE of an emptied partition
   projects/                              management API: projects -> applications -> API keys
     domain/                              slugs, key generation, secret hashing, key status
     projects|applications|api-keys/      controller, DTOs, service, port + Postgres adapter
@@ -113,8 +113,8 @@ self-observe switch and its application).
 - Telemetry has no foreign key to `applications` (cascades into partitions would be row by row). Deleting
   a project or application inserts its ids into `application_purges` in the same transaction;
   `ApplicationPurger` then deletes the rows table by table and partition by partition, in batches,
-  and runs a plain `VACUUM` on each one it deleted from (right away in the background, and on every
-  maintenance run until done). Queries only see applications of live projects.
+  and runs a plain `VACUUM` on each one it deleted from, or `TRUNCATE` on a partition left empty
+  (right away in the background, and on every maintenance run until done). Queries only see applications of live projects.
 
 - Execution and log ids are **UUIDv7 stamped with the event time**, so a lookup by id also filters on the
   partition key (`windowFromId`) and touches one partition.
@@ -152,7 +152,7 @@ self-observe switch and its application).
 - **Trims** (`storage_trims`): "keep the last N days" (`1 <= N < RETENTION_DAYS`, cutoff day
   `today - N`) for a project or one application, one queued row per target. `StorageTrimmer` deletes the
   rows of the raw tables before the cutoff partition by partition in batches, `VACUUM`s each partition
-  it deleted from and saves its progress; rollups and error groups are not trimmed.
+  it deleted from (or truncates it when left empty) and saves its progress; rollups and error groups are not trimmed.
 - **Delete all data** (`POST /projects/:project/storage/purge`) of a project or one application
   keeps the applications and queues them in `application_purges`, so `ApplicationPurger` deletes
   every scoped table (rollups, error groups, services and versions included), as for a deleted one.
@@ -239,8 +239,10 @@ hourly, and on demand for any day an ingest batch touches (advisory-locked). Ret
 - Storage views read the catalog (`pg_total_relation_size`, `reltuples`, `pg_partition_tree`) and
   `application_usage` (through its primary key for one project), never the telemetry rows.
 - Bulk deletes (purge, trim) go through `deleteInBatches` (10 000 rows per statement by `ctid`, one
-  partition at a time, over an index leading with `application_id`), then `vacuumTable` (plain
-  `VACUUM`, outside a transaction, errors logged). Never `VACUUM FULL` on a live collector.
+  partition at a time, over an index leading with `application_id`), then `truncateIfEmpty` for a
+  partition left without rows (locked, checked and truncated in one transaction, 2 s `lock_timeout`)
+  or else `vacuumTable` (plain `VACUUM`, outside a transaction, errors logged). Never `VACUUM FULL` on
+  a live collector.
 - `int8`/`numeric` are parsed to JS numbers and `date` stays a `YYYY-MM-DD` string (`create-database.ts`).
 
 ## OpenAPI

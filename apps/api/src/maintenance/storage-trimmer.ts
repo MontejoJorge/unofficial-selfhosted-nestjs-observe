@@ -1,6 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { sql, type Selectable } from 'kysely';
-import { deleteInBatches, vacuumTable } from '../database/cleanup.js';
+import {
+  deleteInBatches,
+  truncateIfEmpty,
+  vacuumTable,
+} from '../database/cleanup.js';
 import {
   KYSELY,
   PARTITIONED_TABLES,
@@ -27,7 +31,7 @@ interface TrimTarget {
  * Processes `storage_trims`: deletes the rows of a project's applications (or one
  * application) older than the trim's cutoff day from the raw tables (`USAGE_TABLES`),
  * one partition at a time and in batches, and runs a plain `VACUUM` on every partition it
- * deleted from. Rollups and error groups are left alone: they have their own retention.
+ * deleted from; a partition left empty is truncated instead, to free its index files too. Rollups and error groups are left alone: they have their own retention.
  *
  * Only partitions of days before the cutoff can hold such rows (the cutoff is a UTC day
  * boundary), and each statement also filters on the time column, which is what bounds the
@@ -121,7 +125,12 @@ export class StorageTrimmer {
           relation,
           sql`${inApplications} and ${sql.ref(USAGE_TABLES[table])} < ${cutoff}`,
         );
-        if (deleted > 0) await vacuumTable(this.db, relation, this.logger);
+        if (deleted > 0) {
+          const truncated =
+            relation !== table &&
+            (await truncateIfEmpty(this.db, relation, this.logger));
+          if (!truncated) await vacuumTable(this.db, relation, this.logger);
+        }
         deletedRows += deleted;
         await this.db
           .updateTable('storage_trims')

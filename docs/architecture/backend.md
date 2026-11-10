@@ -280,7 +280,7 @@ Key choices and where they are argued:
   ([ADR 0002](../adr/0002-application-scoping.md)): a cascade into partitions would delete row by
   row. Deletes queue the ids in `application_purges`, and `ApplicationPurger` deletes table by table
   and partition by partition, in batches (`deleteInBatches` in `database/cleanup.ts`), then runs a
-  plain `VACUUM`.
+  plain `VACUUM`, or `TRUNCATE` on a partition left empty (`truncateIfEmpty`).
 - **Trims** ("keep the last N days" for a project or application) are queued in `storage_trims` and
   executed by `StorageTrimmer` the same way; rollups and error groups are not trimmed
   ([ADR 0005](../adr/0005-storage-usage-and-trims.md)).

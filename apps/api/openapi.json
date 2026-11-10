@@ -3642,7 +3642,7 @@
         ]
       },
       "post": {
-        "description": "Runs in the background: poll `listStorageTrims` (or the `trims` of `getProjectStorage`) until the trim is gone. Deletes requests, jobs, logs, error occurrences, runtime and custom metrics and profiles before the cutoff day; rollups (charts and stats) and error groups keep their own retention. A pending trim of the same target is reused and moved to the later cutoff. Deleted rows free their space for reuse by new telemetry right away; the VACUUM run after each partition gives only the empty pages at its end back to the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.",
+        "description": "Runs in the background: poll `listStorageTrims` (or the `trims` of `getProjectStorage`) until the trim is gone. Deletes requests, jobs, logs, error occurrences, runtime and custom metrics and profiles before the cutoff day; rollups (charts and stats) and error groups keep their own retention. A pending trim of the same target is reused and moved to the later cutoff. Deleted rows free their space for reuse by new telemetry right away. A partition left without rows is truncated, which gives all its space back; in partitions that keep rows, the VACUUM run after the delete gives only the empty pages at the end back to the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.",
         "operationId": "createStorageTrim",
         "parameters": [
           {
@@ -3690,7 +3690,7 @@
     },
     "/api/projects/{project}/storage/purge": {
       "post": {
-        "description": "Runs in the background: the project storage lists the applications still being deleted in `purging`. Deletes every table, rollups (charts and stats), error groups, instances and versions included; the applications and their API keys stay, so their agents keep sending. Deleted rows free their space for reuse by new telemetry right away; the VACUUM run after each partition gives only the empty pages at its end back to the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.",
+        "description": "Runs in the background: the project storage lists the applications still being deleted in `purging`. Deletes every table, rollups (charts and stats), error groups, instances and versions included; the applications and their API keys stay, so their agents keep sending. Deleted rows free their space for reuse by new telemetry right away. A partition left without rows is truncated, which gives all its space back; in partitions that keep rows, the VACUUM run after the delete gives only the empty pages at the end back to the OS, so the database shrinks partly until the partitions age out of RETENTION_DAYS.",
         "operationId": "createStoragePurge",
         "parameters": [
           {

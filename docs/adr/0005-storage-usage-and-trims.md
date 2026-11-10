@@ -75,6 +75,12 @@ After a trim or an application purge, every table or partition the worker delete
 reusable by new telemetry at once and gives the empty pages at the end of the heap back to the OS.
 `VACUUM FULL` would free everything but locks the partition, which does not fit a live collector.
 
+_Revision (2026-11-10)._ A partition the delete left with no rows is truncated instead
+(`truncateIfEmpty`): the worker locks it with a 2-second `lock_timeout`, checks it is still empty and
+runs `TRUNCATE`, which gives the heap, TOAST and index files back at once. Rows ingested meanwhile keep
+it from being truncated; a busy lock falls back to `VACUUM`. Purging an application that had a day to
+itself no longer leaves the day's files at full size until retention drops them.
+
 ## Consequences
 
 - The storage views read the catalog and a table of applications x days x 7 rows: no scan of the

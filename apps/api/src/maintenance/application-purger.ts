@@ -1,6 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { sql } from 'kysely';
-import { deleteInBatches, vacuumTable } from '../database/cleanup.js';
+import {
+  deleteInBatches,
+  truncateIfEmpty,
+  vacuumTable,
+} from '../database/cleanup.js';
 import {
   APPLICATION_SCOPED_TABLES,
   KYSELY,
@@ -19,7 +23,7 @@ const PARTITIONED = new Set<string>(Object.keys(PARTITIONED_TABLES));
  * transaction), so the API answers at once. This worker then deletes its rows one table,
  * and for day-partitioned tables one partition, at a time, in batches over the indexes
  * that lead with `application_id`, and runs a plain `VACUUM` on every table or partition
- * it deleted from. The purge row is removed when every table is clean, so an interrupted
+ * it deleted from; a partition left empty is truncated instead, to free its index files too. The purge row is removed when every table is clean, so an interrupted
  * purge resumes on the next run. Its `application_usage` rows go last.
  */
 @Injectable()
@@ -77,7 +81,11 @@ export class ApplicationPurger {
           target,
           sql`application_id = ${applicationId}`,
         );
-        if (deleted > 0) await vacuumTable(this.db, target, this.logger);
+        if (deleted === 0) continue;
+        const truncated =
+          PARTITIONED.has(table) &&
+          (await truncateIfEmpty(this.db, target, this.logger));
+        if (!truncated) await vacuumTable(this.db, target, this.logger);
       }
     }
   }
