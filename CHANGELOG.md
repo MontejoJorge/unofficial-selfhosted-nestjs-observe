@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The project is now `unofficial-selfhosted-nestjs-observe`, to make clear it is not an official NestJS
+  project (see [issue #1](https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/issues/1)).
+  The repository moved to https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe and new
+  images are published as `ghcr.io/montejojorge/unofficial-selfhosted-nestjs-observe`: update `image:` in
+  your Compose file. The old image keeps its tags up to 1.2.0 but gets no new ones. The live demo moved to
+  https://montejojorge.github.io/unofficial-selfhosted-nestjs-observe/.
+- The update check only asks the new repository. Collectors up to 1.2.0 already fall back to it.
+
 ## [1.2.0] - 2026-11-03
 
 ### Added
@@ -79,7 +91,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   which the collector reports as its own: bump it (with the root and `apps/web` ones) before tagging,
   or the release job fails after the image is pushed. Lint, typecheck, unit tests and the format
   check now run first: when one fails, no image or release is published.
-- The README links the [live demo](https://montejojorge.github.io/selfhosted-nestjs-observe/) and
+- The README links the [live demo](https://montejojorge.github.io/unofficial-selfhosted-nestjs-observe/) and
   shows how to pin the agent to exactly 0.3.20 in your app:
   `pnpm add @nestjs/observe@0.3.20 --save-exact`.
 
@@ -122,7 +134,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Only `@nestjs/observe` 0.3.20 or earlier is supported.** Later agent releases ship under a license
   that only allows sending telemetry to NestJS Observe, so they must not be pointed at this collector
-  (see [issue #1](https://github.com/MontejoJorge/selfhosted-nestjs-observe/issues/1)). The API and
+  (see [issue #1](https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/issues/1)). The API and
   the example app now pin the agent to exactly 0.3.20.
 - Relicensed under **MIT** (was AGPL-3.0 with the Commons Clause).
 - Raw spans are no longer stored. Migration `0009` **drops the `spans` table**, which was most of the
@@ -153,7 +165,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First release. A drop-in collector and dashboard for the `@nestjs/observe` agent: requests, jobs,
 errors, logs, traces and runtime metrics in a single PostgreSQL database, shipped as a Docker image.
 
-[1.2.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/MontejoJorge/selfhosted-nestjs-observe/releases/tag/v0.1.0
+[Unreleased]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.2.0...main
+[1.2.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/releases/tag/v0.1.0

@@ -18,9 +18,9 @@ compiled module (`/app/package.json` in the image).
 
 **Who asks GitHub.** The API, not the browser: one request per collector instead of one per viewer,
 and the result is stored, so the dashboard reads it without leaving the network.
-`GET https://api.github.com/repos/MontejoJorge/selfhosted-nestjs-observe/releases/latest` (no token: 60
-requests per hour per IP; drafts and pre-releases are left out by GitHub), 10 s timeout. The owner and
-repositories live in one constant (`GITHUB_REPOSITORIES`); GitHub redirects renamed repositories.
+`GET https://api.github.com/repos/MontejoJorge/unofficial-selfhosted-nestjs-observe/releases/latest` (no
+token: 60 requests per hour per IP; drafts and pre-releases are left out by GitHub), 10 s timeout. The
+owner and repository live in one constant (`GITHUB_REPOSITORY`).
 
 **When.** A cron every 6 hours (`@nestjs/schedule`, like maintenance) and the boot run a check only when
 the last attempt is about 6 hours old (10 minutes of slack, so a tick that lands just short of it is not
@@ -29,11 +29,11 @@ too and is shown with its error; the previous result is kept. "Check now" (`POST
 asks at once.
 
 **404.** `releases/latest` answers 404 both when nothing is released and when the repository is gone.
-The check then asks the next repository of the list, `MontejoJorge/unofficial-selfhosted-nestjs-observe`
-(the name the project may move to), and links to the releases page of whichever answered. When both
-answer 404 there is nothing to announce: the stored result is cleared, so no update link is shown, and
+Collectors up to 1.2.0 asked `MontejoJorge/selfhosted-nestjs-observe` first and this name on a 404; the
+project moved to this name, and the old one is now a repository without releases that points to it, so
+they still find new releases. On a 404 there is nothing to announce: the stored result is cleared, so no update link is shown, and
 the settings page says "No release found". The check keeps running every 6 hours, which is harmless;
-the operator can turn it off. Any other error stops at the repository that gave it.
+the operator can turn it off.
 
 **State.** `update_check`, a single-row table (`id = 1`, inserted by migration 0013): the switch and
 the last result (`latest_version`, `latest_url`, `latest_published_at`, `checked_at`, `error`).

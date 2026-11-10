@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # One image for the whole app: the NestJS API, which also serves the built dashboard.
-#   docker build -t selfhosted-nestjs-observe .
+#   docker build -t unofficial-selfhosted-nestjs-observe .
 
 ARG NODE_VERSION=24
 

@@ -5,14 +5,9 @@ import {
   type LatestRelease,
 } from '../application/ports.js';
 
-/**
- * Where the collector's releases are published, in order: the current repository, then
- * the name it may move to. A 404 (no release, or no repository) moves on to the next one.
- */
-export const GITHUB_REPOSITORIES = [
-  'MontejoJorge/selfhosted-nestjs-observe',
-  'MontejoJorge/unofficial-selfhosted-nestjs-observe',
-] as const;
+/** Where the collector's releases are published. */
+export const GITHUB_REPOSITORY =
+  'MontejoJorge/unofficial-selfhosted-nestjs-observe';
 
 const releasesPage = (repository: string) =>
   `https://github.com/${repository}/releases`;
@@ -47,8 +42,7 @@ export function parseLatestRelease(body: unknown): LatestRelease {
 }
 
 /**
- * Latest non-draft, non-prerelease GitHub release of the first repository that has one,
- * without a token (60 requests per hour per IP, far above two every 6 hours).
+ * Latest non-draft, non-prerelease GitHub release of the repository, without a token (60 requests per hour per IP, far above two every 6 hours).
  */
 @Injectable()
 export class GithubReleaseSource extends ReleaseSource {
@@ -58,27 +52,18 @@ export class GithubReleaseSource extends ReleaseSource {
 
   releasesUrl(latest: LatestRelease | null): string {
     return (
-      (latest && releasesPageOf(latest.url)) ??
-      releasesPage(GITHUB_REPOSITORIES[0])
+      (latest && releasesPageOf(latest.url)) ?? releasesPage(GITHUB_REPOSITORY)
     );
   }
 
+  /** Null on 404: nothing released, or no such repository. */
   async latest(): Promise<LatestRelease | null> {
-    for (const repository of GITHUB_REPOSITORIES) {
-      const release = await this.latestOf(repository);
-      if (release) return release;
-    }
-    return null;
-  }
-
-  /** Null on 404: nothing released there, or no such repository. */
-  private async latestOf(repository: string): Promise<LatestRelease | null> {
     const response = await fetch(
-      `https://api.github.com/repos/${repository}/releases/latest`,
+      `https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest`,
       {
         headers: {
           Accept: 'application/vnd.github+json',
-          'User-Agent': `selfhosted-nestjs-observe/${this.version}`,
+          'User-Agent': `unofficial-selfhosted-nestjs-observe/${this.version}`,
           'X-GitHub-Api-Version': '2022-11-28',
         },
         signal: AbortSignal.timeout(TIMEOUT_MS),

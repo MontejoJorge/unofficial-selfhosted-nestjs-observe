@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  GITHUB_REPOSITORIES,
+  GITHUB_REPOSITORY,
   GithubReleaseSource,
   parseLatestRelease,
   releasesPageOf,
@@ -48,7 +48,7 @@ describe('releasesPageOf', () => {
 });
 
 describe('GithubReleaseSource', () => {
-  const [current, unofficial] = GITHUB_REPOSITORIES;
+  const current = GITHUB_REPOSITORY;
   const release = (repository: string) => ({
     tag_name: 'v1.1.0',
     html_url: `https://github.com/${repository}/releases/tag/v1.1.0`,
@@ -74,7 +74,7 @@ describe('GithubReleaseSource', () => {
     vi.unstubAllGlobals();
   });
 
-  it('reads the current repository first', async () => {
+  it('reads the latest release of the repository', async () => {
     const asked = stubGitHub({ [current]: [200, release(current)] });
     const source = new GithubReleaseSource('1.0.0');
     const latest = await source.latest();
@@ -85,18 +85,7 @@ describe('GithubReleaseSource', () => {
     );
   });
 
-  it('falls back to the unofficial repository on a 404', async () => {
-    const asked = stubGitHub({ [unofficial]: [200, release(unofficial)] });
-    const source = new GithubReleaseSource('1.0.0');
-    const latest = await source.latest();
-    expect(asked).toEqual([current, unofficial]);
-    expect(latest?.url).toContain(unofficial);
-    expect(source.releasesUrl(latest)).toBe(
-      `https://github.com/${unofficial}/releases`,
-    );
-  });
-
-  it('finds nothing when both answer 404', async () => {
+  it('finds nothing on a 404', async () => {
     stubGitHub({});
     const source = new GithubReleaseSource('1.0.0');
     expect(await source.latest()).toBeNull();
@@ -105,7 +94,7 @@ describe('GithubReleaseSource', () => {
     );
   });
 
-  it('reports other errors without trying the next repository', async () => {
+  it('reports other errors', async () => {
     const asked = stubGitHub({ [current]: [503] });
     await expect(new GithubReleaseSource('1.0.0').latest()).rejects.toThrow(
       /GitHub answered 503/,

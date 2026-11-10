@@ -2,7 +2,7 @@
   <img src="docs/assets/logo.svg" alt="" width="96" height="96" />
 </p>
 
-<h1 align="center">selfhosted-nestjs-observe</h1>
+<h1 align="center">unofficial-selfhosted-nestjs-observe</h1>
 
 <p align="center">
   A self-hosted collector and dashboard for <a href="https://github.com/nestjs/observe"><code>@nestjs/observe</code></a>.<br />
@@ -12,11 +12,11 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://github.com/nestjs/observe"><img src="https://img.shields.io/badge/%40nestjs%2Fobserve-%E2%89%A4%200.3.20-red.svg" alt="@nestjs/observe 0.3.20 or earlier" /></a>
-  <a href="https://montejojorge.github.io/selfhosted-nestjs-observe/"><img src="https://img.shields.io/badge/demo-live-brightgreen.svg" alt="Live demo" /></a>
+  <a href="https://montejojorge.github.io/unofficial-selfhosted-nestjs-observe/"><img src="https://img.shields.io/badge/demo-live-brightgreen.svg" alt="Live demo" /></a>
 </p>
 
 <p align="center">
-  <a href="https://montejojorge.github.io/selfhosted-nestjs-observe/"><strong>Try the live demo</strong></a>: the dashboard running in your browser on generated data, no backend.
+  <a href="https://montejojorge.github.io/unofficial-selfhosted-nestjs-observe/"><strong>Try the live demo</strong></a>: the dashboard running in your browser on generated data, no backend.
 </p>
 
 > [!NOTE]
@@ -27,7 +27,7 @@
 > This project only works with **`@nestjs/observe` 0.3.20 or earlier**. Later releases may not work correctly
 > with this collector, and they ship under the NestJS Observe Agent License, which only allows sending
 > telemetry to NestJS Observe: pointing them at this collector would breach that license. See
-> [issue #1](https://github.com/MontejoJorge/selfhosted-nestjs-observe/issues/1).
+> [issue #1](https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/issues/1).
 
 Install or downgrade the agent to that exact version, without a `^` range, in your Nest app:
 
@@ -35,7 +35,7 @@ Install or downgrade the agent to that exact version, without a `^` range, in yo
 pnpm add @nestjs/observe@0.3.20 --save-exact
 ```
 
-[![Requests page of the live demo: request rate and status split, latency with a release marker, and the operations table](docs/assets/screenshots/requests.png)](https://montejojorge.github.io/selfhosted-nestjs-observe/)
+[![Requests page of the live demo: request rate and status split, latency with a release marker, and the operations table](docs/assets/screenshots/requests.png)](https://montejojorge.github.io/unofficial-selfhosted-nestjs-observe/)
 
 ## Features
 
@@ -49,13 +49,13 @@ pnpm add @nestjs/observe@0.3.20 --save-exact
 ## Quick start with Docker
 
 The image is published to the GitHub Container Registry as
-`ghcr.io/montejojorge/selfhosted-nestjs-observe` (tags `latest` and each version). It runs the API and
+`ghcr.io/montejojorge/unofficial-selfhosted-nestjs-observe` (tags `latest` and each version). It runs the API and
 serves the dashboard from the same port.
 
 ```sh
 mkdir observe && cd observe
-curl -fsSLO https://raw.githubusercontent.com/MontejoJorge/selfhosted-nestjs-observe/main/deploy/docker-compose.yml
-curl -fsSL -o .env https://raw.githubusercontent.com/MontejoJorge/selfhosted-nestjs-observe/main/deploy/.env.example
+curl -fsSLO https://raw.githubusercontent.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/main/deploy/docker-compose.yml
+curl -fsSL -o .env https://raw.githubusercontent.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/main/deploy/.env.example
 # set POSTGRES_PASSWORD in .env, then:
 docker compose up -d
 ```

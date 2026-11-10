@@ -12,7 +12,7 @@ import { version } from '../../../package.json';
 import { TIME } from '../world';
 
 const RELEASES_URL =
-  'https://github.com/MontejoJorge/selfhosted-nestjs-observe/releases';
+  'https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/releases';
 
 const status: UpdateStatusDto = {
   currentVersion: version,

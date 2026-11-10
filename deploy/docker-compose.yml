@@ -17,7 +17,7 @@ services:
       retries: 10
 
   observe:
-    image: ghcr.io/montejojorge/selfhosted-nestjs-observe:${OBSERVE_VERSION:-latest}
+    image: ghcr.io/montejojorge/unofficial-selfhosted-nestjs-observe:${OBSERVE_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       postgres:
