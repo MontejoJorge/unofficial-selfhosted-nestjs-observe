@@ -196,6 +196,21 @@ const sqlite = (
   tags: { 'db.system': 'sqlite', 'db.statement': statement },
 });
 
+/** A span the app creates itself (`tracer.createSpan`); it takes its caller's class and method. */
+const custom = (
+  caller: readonly [className: string, methodName: string],
+  name: string,
+  share: number,
+  options: Pick<SpanTemplate, 'children' | 'fails' | 'tags'> = {},
+): SpanTemplate => ({
+  className: caller[0],
+  methodName: caller[1],
+  name,
+  share,
+  origin: 'manual',
+  ...options,
+});
+
 const httpGet = (url: string, share: number, fails = false): SpanTemplate => ({
   className: 'HttpService',
   methodName: 'get',
@@ -255,6 +270,9 @@ export const OPERATIONS: OperationDef[] = [
     spans: [
       code('StockController', 'getStock', 0.97, [
         code('StockService', 'findOne', 0.85, [
+          custom(['StockService', 'findOne'], 'cache.lookup', 0.1, {
+            tags: { 'cache.hit': false },
+          }),
           sqlite(
             'SELECT',
             'stock',
@@ -286,27 +304,33 @@ export const OPERATIONS: OperationDef[] = [
     spans: [
       code('StockController', 'reserve', 0.97, [
         code('StockService', 'reserve', 0.9, [
-          sqlite(
-            'SELECT',
-            'stock',
-            'select "available" from "stock" where "product_id" = ?',
-            0.2,
-          ),
-          {
-            ...sqlite(
-              'UPDATE',
-              'stock',
-              'update "stock" set "available" = "available" - ? where "product_id" = ?',
-              0.35,
-            ),
+          custom(['StockService', 'reserve'], 'reservation.validate', 0.06),
+          custom(['StockService', 'reserve'], 'stock.reserve', 0.88, {
             fails: true,
-          },
-          sqlite(
-            'INSERT',
-            'reservations',
-            'insert into "reservations" ("product_id", "user_id", "quantity") values (?, ?, ?)',
-            0.25,
-          ),
+            children: [
+              sqlite(
+                'SELECT',
+                'stock',
+                'select "available" from "stock" where "product_id" = ?',
+                0.2,
+              ),
+              {
+                ...sqlite(
+                  'UPDATE',
+                  'stock',
+                  'update "stock" set "available" = "available" - ? where "product_id" = ?',
+                  0.4,
+                ),
+                fails: true,
+              },
+              sqlite(
+                'INSERT',
+                'reservations',
+                'insert into "reservations" ("product_id", "user_id", "quantity") values (?, ?, ?)',
+                0.3,
+              ),
+            ],
+          }),
         ]),
       ]),
     ],
@@ -367,8 +391,17 @@ export const OPERATIONS: OperationDef[] = [
     spans: [
       code('CatalogController', 'insights', 0.98, [
         code('CatalogService', 'buildInsights', 0.95, [
-          httpGet('https://dummyjson.com/products?limit=100', 0.7),
-          code('CatalogService', 'score', 0.2, [], true),
+          httpGet('https://dummyjson.com/products?limit=100', 0.6),
+          custom(['CatalogService', 'buildInsights'], 'catalog.rank', 0.08),
+          custom(
+            ['CatalogService', 'buildInsights'],
+            'pricing.apply-rules',
+            0.25,
+            {
+              fails: true,
+              children: [code('CatalogService', 'score', 0.7, [], true)],
+            },
+          ),
         ]),
       ]),
     ],
@@ -388,8 +421,9 @@ export const OPERATIONS: OperationDef[] = [
     spans: [
       code('PokemonController', 'matchups', 0.98, [
         code('PokemonService', 'matchups', 0.95, [
-          httpGet('https://pokeapi.co/api/v2/pokemon/pikachu', 0.55, true),
-          httpGet('https://pokeapi.co/api/v2/type/electric', 0.35),
+          httpGet('https://pokeapi.co/api/v2/pokemon/pikachu', 0.5, true),
+          httpGet('https://pokeapi.co/api/v2/type/electric', 0.32),
+          custom(['PokemonService', 'matchups'], 'matchups.compute', 0.1),
         ]),
       ]),
     ],
@@ -408,6 +442,9 @@ export const OPERATIONS: OperationDef[] = [
     spans: [
       code('UsersController', 'summary', 0.97, [
         code('UsersService', 'summary', 0.9, [
+          custom(['UsersService', 'summary'], 'cache.lookup', 0.12, {
+            tags: { 'cache.hit': false },
+          }),
           sqlite(
             'SELECT',
             'reservations',
@@ -436,11 +473,15 @@ export const OPERATIONS: OperationDef[] = [
     spans: [
       code('InvoicesController', 'create', 0.98, [
         code('InvoicesService', 'create', 0.95, [
+          custom(['InvoicesService', 'create'], 'invoice.compute-totals', 0.08),
+          custom(['InvoicesService', 'create'], 'tax.calculate', 0.1, {
+            tags: { 'tax.region': 'EU' },
+          }),
           {
             className: 'StripeClient',
             methodName: 'createInvoice',
             name: 'POST api.stripe.com',
-            share: 0.7,
+            share: 0.65,
             fails: true,
             tags: {
               'http.method': 'POST',
@@ -473,7 +514,12 @@ export const OPERATIONS: OperationDef[] = [
     byVersion: { '0.9.1': { latency: 0.7 } },
     spans: [
       code('InvoicesController', 'findOne', 0.97, [
-        code('InvoicesService', 'findOne', 0.8),
+        code('InvoicesService', 'findOne', 0.8, [
+          custom(['InvoicesService', 'findOne'], 'cache.lookup', 0.15, {
+            tags: { 'cache.hit': true },
+          }),
+          custom(['InvoicesService', 'findOne'], 'invoice.load', 0.7),
+        ]),
       ]),
     ],
   },
@@ -495,6 +541,7 @@ export const JOBS: JobDef[] = [
     spans: [
       code('JobsService', 'featuredPokemon', 0.98, [
         httpGet('https://pokeapi.co/api/v2/pokemon?limit=20', 0.8, true),
+        custom(['JobsService', 'featuredPokemon'], 'pokemon.rank', 0.12),
       ]),
     ],
     log: {
@@ -516,18 +563,22 @@ export const JOBS: JobDef[] = [
     byVersion: { '1.5.0': { latency: 5 } },
     spans: [
       code('JobsService', 'reconcile', 0.98, [
-        sqlite(
-          'SELECT',
-          'reservations',
-          'select "product_id", sum("quantity") from "reservations" group by "product_id"',
-          0.45,
-        ),
-        sqlite(
-          'UPDATE',
-          'stock',
-          'update "stock" set "reserved" = ? where "product_id" = ?',
-          0.4,
-        ),
+        custom(['JobsService', 'reconcile'], 'inventory.sync', 0.95, {
+          children: [
+            sqlite(
+              'SELECT',
+              'reservations',
+              'select "product_id", sum("quantity") from "reservations" group by "product_id"',
+              0.45,
+            ),
+            sqlite(
+              'UPDATE',
+              'stock',
+              'update "stock" set "reserved" = ? where "product_id" = ?',
+              0.4,
+            ),
+          ],
+        }),
       ]),
     ],
     log: {
@@ -548,7 +599,9 @@ export const JOBS: JobDef[] = [
     maxAttempts: 3,
     spans: [
       code('ReceiptProcessor', 'process', 0.98, [
-        code('TemplateService', 'render', 0.12),
+        custom(['ReceiptProcessor', 'process'], 'receipt.render', 0.12, {
+          children: [code('TemplateService', 'render', 0.9)],
+        }),
         {
           ...code('MailerService', 'send', 0.8, [], true),
           tags: { 'smtp.host': 'smtp.postmarkapp.com' },
@@ -598,6 +651,9 @@ export const JOBS: JobDef[] = [
     byVersion: { '2.1.0': { latency: 0.75 } },
     spans: [
       code('WebhookProcessor', 'process', 0.98, [
+        custom(['WebhookProcessor', 'process'], 'webhook.sign', 0.05, {
+          tags: { algorithm: 'hmac-sha256' },
+        }),
         {
           className: 'HttpService',
           methodName: 'post',
@@ -630,17 +686,24 @@ export const JOBS: JobDef[] = [
     maxAttempts: 2,
     spans: [
       code('PdfProcessor', 'process', 0.99, [
-        code('PdfRenderer', 'render', 0.8, [], true),
-        {
-          className: 'S3Client',
-          methodName: 'putObject',
-          name: 'PUT s3',
-          share: 0.15,
-          tags: {
-            'http.method': 'PUT',
-            'http.url': 'https://invoices.s3.eu-west-1.amazonaws.com',
-          },
-        },
+        custom(['PdfProcessor', 'process'], 'pdf.render', 0.8, {
+          fails: true,
+          children: [code('PdfRenderer', 'render', 0.95, [], true)],
+        }),
+        custom(['PdfProcessor', 'process'], 'pdf.upload', 0.16, {
+          children: [
+            {
+              className: 'S3Client',
+              methodName: 'putObject',
+              name: 'PUT s3',
+              share: 0.95,
+              tags: {
+                'http.method': 'PUT',
+                'http.url': 'https://invoices.s3.eu-west-1.amazonaws.com',
+              },
+            },
+          ],
+        }),
       ]),
     ],
     log: {
