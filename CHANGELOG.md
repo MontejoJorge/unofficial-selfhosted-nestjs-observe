@@ -7,6 +7,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-18
+
+### Changed
+
+- The Releases page lists every version your applications reported, whatever the time range. Its
+  header keeps the application filter and drops the range controls. `GET /api/releases` no longer takes
+  `range`, `from` or `to`.
+- The dashboard's request, duration and job charts mark when each release first showed up, like the
+  other charts.
+
 ## [1.3.0] - 2026-11-10
 
 ### Added
@@ -185,7 +195,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 First release. A drop-in collector and dashboard for the `@nestjs/observe` agent: requests, jobs,
 errors, logs, traces and runtime metrics in a single PostgreSQL database, shipped as a Docker image.
 
-[Unreleased]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.3.0...main
+[Unreleased]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.3.1...main
+[1.3.1]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MontejoJorge/unofficial-selfhosted-nestjs-observe/compare/v1.0.0...v1.1.0
