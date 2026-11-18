@@ -17,8 +17,6 @@ export interface ReleaseCursor {
 
 export interface ReleaseListFilter {
   scope: TelemetryScope;
-  /** releases whose boundary falls in it */
-  range: TimeWindow;
   window: ReleaseWindow;
   limit: number;
   cursor: ReleaseCursor | null;

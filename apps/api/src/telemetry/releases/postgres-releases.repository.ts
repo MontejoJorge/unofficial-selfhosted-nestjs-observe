@@ -120,18 +120,12 @@ export class PostgresReleasesRepository extends ReleasesRepository {
   }
 
   async list(filter: ReleaseListFilter): Promise<Page<ReleaseSummaryDto>> {
-    const { scope, range, cursor, limit } = filter;
-    const conditions: RawBuilder<unknown>[] = [
-      sql`p.first_seen_at >= ${range.from}`,
-      sql`p.first_seen_at < ${range.to}`,
-    ];
-    if (cursor)
-      conditions.push(
-        sql`(p.first_seen_at, p.application_id, p.service_version) < (${cursor.at}, ${cursor.applicationId}::uuid, ${cursor.version})`,
-      );
+    const { scope, cursor, limit } = filter;
     const rows = await this.releases(
       scope.applicationIds,
-      sql.join(conditions, sql` and `),
+      cursor
+        ? sql`(p.first_seen_at, p.application_id, p.service_version) < (${cursor.at}, ${cursor.applicationId}::uuid, ${cursor.version})`
+        : sql`true`,
       limit + 1,
     );
     const hasMore = rows.length > limit;

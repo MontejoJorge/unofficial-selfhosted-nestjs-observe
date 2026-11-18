@@ -5,13 +5,16 @@ import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 /** The API compares traffic around every listed release, so pages stay small. */
 const RELEASES_PAGE_SIZE = 20;
 
-/** Releases whose first sighting is in the scope's range, newest first. */
-export const releasesQueryOptions = (scope: Scope) =>
+/** The whole release history of the scope, newest first: the time range does not apply. */
+export const releasesQueryOptions = ({
+  project,
+  application,
+}: Pick<Scope, 'project' | 'application'>) =>
   infiniteQueryOptions({
-    queryKey: ['releases', 'list', scope],
+    queryKey: ['releases', 'list', { project, application }],
     queryFn: ({ pageParam, signal }) =>
       api.releases.listReleases(
-        { ...scope, limit: RELEASES_PAGE_SIZE, cursor: pageParam },
+        { project, application, limit: RELEASES_PAGE_SIZE, cursor: pageParam },
         { signal },
       ),
     initialPageParam: undefined as string | undefined,

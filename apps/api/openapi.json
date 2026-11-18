@@ -3169,35 +3169,6 @@
             }
           },
           {
-            "name": "range",
-            "required": false,
-            "in": "query",
-            "description": "Relative window ending now (default `1h`). Ignored when `from` is given.",
-            "schema": {
-              "$ref": "#/components/schemas/TimeRange"
-            }
-          },
-          {
-            "name": "from",
-            "required": false,
-            "in": "query",
-            "description": "Window start (ISO 8601 date-time with a time zone), inclusive.",
-            "schema": {
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "name": "to",
-            "required": false,
-            "in": "query",
-            "description": "Window end (ISO 8601 date-time with a time zone), exclusive; defaults to now.",
-            "schema": {
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
             "name": "window",
             "required": false,
             "in": "query",
@@ -3251,7 +3222,7 @@
             }
           }
         },
-        "summary": "Releases whose boundary falls in the range (default 7d), newest first, with a before/after comparison",
+        "summary": "Every release of the scope regardless of time range, newest first, with a before/after comparison",
         "tags": [
           "releases"
         ]

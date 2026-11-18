@@ -1,5 +1,8 @@
 import { LoadMore } from '@/components/data/load-more';
-import { ScopeControls } from '@/components/layout/scope-controls';
+import {
+  ApplicationSelect,
+  RefreshButton,
+} from '@/components/layout/scope-controls';
 import { Page, PageHeader } from '@/components/page';
 import { EmptyState } from '@/components/states';
 import { ProjectTitle } from '@/features/projects/project-title';
@@ -10,7 +13,7 @@ import { shortVersion } from './release-math';
 import { ReleaseTable } from './release-table';
 import { releasesSearch } from './search';
 
-/** The versions the project's applications reported, newest first. */
+/** Every version the project's applications reported, newest first, whatever the time range. */
 export function ReleasesPage() {
   const scope = useScope();
   const [{ version }, setSearch] = useTypedSearch(releasesSearch);
@@ -26,7 +29,11 @@ export function ReleasesPage() {
         <ProjectTitle subtitle="Every version your applications reported, and when it first showed up.">
           Releases
         </ProjectTitle>
-        <ScopeControls />
+        {/* The history is not windowed, so the header has no time range. */}
+        <div className="flex flex-wrap items-center gap-3">
+          <ApplicationSelect />
+          <RefreshButton />
+        </div>
       </PageHeader>
 
       <div className="flex flex-col gap-3">
@@ -36,8 +43,10 @@ export function ReleasesPage() {
             <span className="font-mono text-foreground" title={version}>
               {shortVersion(version)}
             </span>{' '}
-            was not released in this time range
-            {query.hasNextPage ? ' (or is further down the list)' : ''}.{' '}
+            {query.hasNextPage
+              ? 'is further down the list'
+              : 'was never reported'}
+            .{' '}
             <button
               type="button"
               className="font-medium text-foreground underline underline-offset-4"
@@ -49,14 +58,14 @@ export function ReleasesPage() {
         ) : null}
 
         {releases.length === 0 ? (
-          <EmptyState title="No releases in this time range">
+          <EmptyState title="No releases yet">
             <p>
               A release shows up here when an instance reports a version it has
               not reported before. The agent takes the version from{' '}
               <code className="text-foreground">OBSERVE_SERVICE_VERSION</code>,
               from the commit hash your platform exposes, or from the{' '}
               <code className="text-foreground">serviceVersion</code> option of
-              the module. Try a longer time range.
+              the module.
             </p>
           </EmptyState>
         ) : (

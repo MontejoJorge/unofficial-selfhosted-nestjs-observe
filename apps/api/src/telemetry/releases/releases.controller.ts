@@ -43,17 +43,12 @@ export class ReleasesController {
   @ApiOperation({
     operationId: 'listReleases',
     summary:
-      'Releases whose boundary falls in the range (default 7d), newest first, with a before/after comparison',
+      'Every release of the scope regardless of time range, newest first, with a before/after comparison',
   })
   @ApiOkResponse({ type: ReleasePageDto })
   async list(@Query() query: ReleasesQueryDto): Promise<ReleasePageDto> {
     return this.releases.list({
       scope: await this.scopes.resolve(query),
-      range: resolveWindow({
-        range: query.range ?? '7d',
-        from: query.from,
-        to: query.to,
-      }),
       window: query.window ?? DEFAULT_RELEASE_WINDOW,
       limit: query.limit ?? DEFAULT_RELEASE_PAGE_SIZE,
       cursor: decodeReleaseCursor(query.cursor),

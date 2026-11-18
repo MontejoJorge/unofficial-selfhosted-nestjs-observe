@@ -318,9 +318,9 @@ export const releaseHandlers = [
   http.get('*/api/releases', ({ request }) => {
     try {
       const params = new URL(request.url).searchParams;
-      const window = windowOf(params);
+      const now = Date.now();
       const items = releasesOf(params)
-        .filter((r) => r.boundary >= window.from && r.boundary < window.to)
+        .filter((r) => r.boundary < now)
         .sort((a, b) => b.boundary - a.boundary)
         .map(summary);
       return HttpResponse.json(page(items, params, 20));

@@ -13,11 +13,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import {
-  RangeQueryDto,
-  ScopeQueryDto,
-  TimeRangeQueryDto,
-} from '../common/query.dto.js';
+import { ScopeQueryDto, TimeRangeQueryDto } from '../common/query.dto.js';
 import { ERROR_SOURCES } from '../errors/errors.dto.js';
 import {
   RELEASE_SIGNALS,
@@ -42,12 +38,11 @@ export class ReleaseWindowQueryDto {
 }
 
 /**
- * Releases whose boundary falls in the range (`range` defaults to `7d` here), newest
- * first, keyset-paginated.
+ * The whole release history of the scope, newest first, keyset-paginated. It takes
+ * no time range: the list is short and every row brings its own comparison windows.
  */
 export class ReleasesQueryDto extends IntersectionType(
   ScopeQueryDto,
-  RangeQueryDto,
   ReleaseWindowQueryDto,
 ) {
   /** Page size (default 20, max 100: every row runs a comparison). */

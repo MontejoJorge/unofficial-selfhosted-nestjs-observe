@@ -71,8 +71,8 @@ is the worst verdict among the kinds with enough data (`regression` > `improving
 method) and 10 jobs (queue, name) with the most executions over both sides, with count, error rate,
 average and p95 before and after. The release's own comparison is the all-traffic row.
 
-**Routes** (`releases` tag): `GET /api/releases` (releases whose boundary is in the range, default
-`7d`, newest first, keyset on `(boundary, application, version)`, at most 100 per page),
+**Routes** (`releases` tag): `GET /api/releases` (the whole release history, regardless of the
+dashboard's time range, newest first, keyset on `(boundary, application, version)`, at most 100 per page),
 `GET /api/release-markers` (boundaries in the range for chart markers; with `instance`, that instance's
 version switches) and `GET /api/releases/:version` (the detail; `application` is required only when
 several applications of the project reported the version, else 400). The markers have their own path
