@@ -6,6 +6,7 @@ import { Page, PageHeader, PanelGrid } from '@/components/page';
 import { EmptyState, NoTelemetryHint } from '@/components/states';
 import { errorGroupsQueryOptions } from '@/features/errors/queries';
 import { ProjectTitle } from '@/features/projects/project-title';
+import { useReleaseMarkers } from '@/features/releases/use-release-markers';
 import { operationsQueryOptions } from '@/features/requests/queries';
 import { servicesQueryOptions } from '@/features/services/queries';
 import { TimeMapPanel } from '@/features/services/time-map-panel';
@@ -109,6 +110,7 @@ export function DashboardPage() {
   const scope = useScope();
   const { data } = useSuspenseQuery(overviewQueryOptions(scope));
   const previous = usePreviousOverview(scope);
+  const markers = useReleaseMarkers(scope);
   const { outliers, throughput } = useRankings();
   const { data: services } = useSuspenseQuery(servicesQueryOptions(scope));
   const isEmpty =
@@ -137,8 +139,14 @@ export function DashboardPage() {
           previous={previous}
           timeWindow={scope}
           layout="figure"
+          markers={markers}
         />
-        <DurationPanel overview={data} previous={previous} layout="figure" />
+        <DurationPanel
+          overview={data}
+          previous={previous}
+          layout="figure"
+          markers={markers}
+        />
       </PanelGrid>
 
       <PanelGrid className="xl:grid-cols-3">
@@ -166,11 +174,17 @@ export function DashboardPage() {
       </PanelGrid>
 
       <PanelGrid>
-        <JobsPanel overview={data} previous={previous} layout="figure" />
+        <JobsPanel
+          overview={data}
+          previous={previous}
+          layout="figure"
+          markers={markers}
+        />
         <JobsDurationPanel
           overview={data}
           previous={previous}
           layout="figure"
+          markers={markers}
         />
       </PanelGrid>
     </Page>
